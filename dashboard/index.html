@@ -1,0 +1,97 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgentFlow control room</title>
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#17222d;--mute:#5d6b7a;--line:#d5dce3;--teal:#0b6e7a;--amber:#a86a06;--red:#b42318;--blue:#2f5bd1;--tape:#101b26;--tapeink:#cfe0ee;--r:6px}
+@media(prefers-color-scheme:dark){:root{--bg:#0d141b;--panel:#15202b;--ink:#e6edf3;--mute:#8da0b2;--line:#27384a;--teal:#4fc3d1;--amber:#e0a646;--red:#ff7b72;--blue:#8aa9ff;--tape:#0a1118}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Avenir Next","Segoe UI",system-ui,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+h1{font-size:18px;margin:0;letter-spacing:.2px}header small{color:var(--mute)}
+.badge{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}.pill{padding:3px 10px;border-radius:99px;border:1px solid var(--line);font-size:12px;background:var(--panel)}
+.ok{color:var(--teal);border-color:var(--teal)}.bad{color:var(--red);border-color:var(--red);font-weight:600}
+main{display:grid;grid-template-columns:270px minmax(0,1fr) 340px;gap:14px;padding:14px 20px;align-items:start}
+@media(max-width:1100px){main{grid-template-columns:1fr}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:14px}
+h2{font-size:13px;margin:0 0 8px;color:var(--mute);font-weight:600}
+label{display:block;font-size:12px;color:var(--mute);margin:8px 0 3px}
+input,select,button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;width:100%}
+button{cursor:pointer;background:var(--teal);color:#fff;border-color:var(--teal);font-weight:600;margin-top:10px}button.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+button.sm{width:auto;padding:3px 8px;margin:0;font-size:12px}
+.row{display:flex;gap:6px;align-items:center;justify-content:space-between;margin:5px 0;font-size:13px}
+#tape{background:var(--tape);color:var(--tapeink);border-radius:var(--r);height:620px;overflow:auto;padding:8px 0;font:12.5px/1.5 ui-monospace,"SF Mono",Consolas,monospace}
+.ev{display:grid;grid-template-columns:62px 118px 1fr;gap:8px;padding:2px 12px;border-left:3px solid transparent}
+.ev .t{opacity:.5}.ev .k{font-weight:700}.ev:hover{background:rgba(255,255,255,.04)}
+.k-money{border-color:#e0a646}.k-money .k{color:#e0a646}.k-good{border-color:#4fc3d1}.k-good .k{color:#4fc3d1}.k-bad{border-color:#ff7b72;background:rgba(255,123,114,.08)}.k-bad .k{color:#ff7b72}.k-info .k{color:#8aa9ff}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;color:var(--mute);font-weight:600;padding:3px 4px}td{padding:4px;border-top:1px solid var(--line)}
+.num{font-variant-numeric:tabular-nums;text-align:right}.low{color:var(--red);font-weight:600}.hi{color:var(--teal);font-weight:600}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:var(--teal)}
+.tiny{font-size:12px;color:var(--mute)}
+</style></head><body>
+<header><h1>AgentFlow control room</h1><small>autonomous agents discover, bid, verify and pay. Simulated credits only, no real money.</small>
+<div class="badge"><span class="pill" id="headhash" title="External SHA-256 Head Hash">head: …</span><span class="pill" id="aud">audit: …</span><span class="pill" id="led">ledger: …</span></div></header>
+<main>
+<div>
+ <section><h2>Submit a goal</h2>
+  <label for="goal">Goal</label><input id="goal" value="Analyze customer reviews and produce a report">
+  <label for="bud">Budget (₹)</label><input id="bud" type="number" value="20" min="1" step="1">
+  <label for="pri">Priority</label><select id="pri"><option value="balanced">Balanced cost and reliability</option><option value="auto">Auto (AI Risk & Policy Brain)</option><option value="reliability">Highest reliability</option><option value="cost">Lowest cost</option></select>
+  <label for="mode">Buyer policy</label><select id="mode"><option value="agentflow">AgentFlow (trust-weighted, verified, escrow)</option><option value="cheapest_verified">Cheapest + verification</option><option value="naive">Naive cheapest, pay on delivery</option></select>
+  <button id="run">Run task</button>
+  <div class="row tiny" style="margin-top:10px"><span>User balance</span><b id="ubal" class="num">–</b></div>
+ </section>
+ <section><h2>Inject provider failure</h2><div id="inj"></div><p class="tiny">Changes how a live provider process behaves. Reputation reacts to verifier verdicts only.</p></section>
+ <section><h2>Audit</h2>
+  <button class="ghost" id="vf">Verify hash chain</button><button class="ghost" id="tm">Tamper with an old record</button><div id="tmout" class="tiny" style="margin-top:6px"></div>
+  <button class="ghost" id="rs">Reset demo state</button></section>
+</div>
+<div><section><h2>Live tape (every event is hash-chained)</h2><div id="tape" aria-live="polite"></div></section></div>
+<div>
+ <section><h2>Providers: claimed vs verified</h2><table><thead><tr><th>Agent</th><th>Does</th><th class="num">₹</th><th class="num">Bond ₹</th><th class="num">Claimed</th><th class="num">Verified</th></tr></thead><tbody id="prov"></tbody></table>
+  <p class="tiny">The buyer scores on the verified column. Claims are ignored.</p></section>
+ <section><h2>Ledger balances (₹)</h2><div id="bals"></div></section>
+ <section><h2>Benchmark (same providers, 3 buyers)</h2><div id="bench" class="tiny">Run scripts/benchmark.py to fill this.</div></section>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);let H={},A={"content-type":"application/json"};
+const inr=p=>(p/100).toFixed(2),short=s=>(s||"").replace("provider-","");
+function line(e){const p=e.payload,T=e.type;
+ const m={TASK_CREATED:["info",`goal received, budget ₹${inr(p.budget)}, policy ${p.mode}`],PLAN:["info",`plan ${p.pipeline.join(" → ")}`],POLICY_DECISION:["info",`brain policy ${p.profile}: weights wR=${p.weights[0]}, wC=${p.weights[1]}, wT=${p.weights[2]} (${p.source})`],BOND_SLASHED:["bad",`slashed ₹${inr(p.slashed_paise)} from ${short(p.provider)} bond (remaining ₹${inr(p.remaining_bond)})`],
+ STAGE_START:["info",`${p.capability} attempt ${p.attempt+1}, stage budget ₹${inr(p.stage_budget)}`],
+ DISCOVERED:["info",`${p.providers.length} providers in registry: ${p.providers.map(x=>x.name+" (verified "+Math.round(x.verified_R*100)+"%)").join(", ")}`],
+ BID:["info",`${p.name} bids ₹${inr(p.price)}, ${p.eta_ms} ms (claims ${Math.round(p.claimed_R*100)}%, verified ${Math.round(p.verified_R*100)}%)`],
+ BID_REJECTED:["bad",`${short(p.provider)} rejected: ${p.reason}`],BID_DROPPED:["bad",`${short(p.provider)} dropped: ${p.reason}`],
+ BID_SCORED:["info",`winner ${short(p.winner)} by ${p.rule}. `+p.ranking.map(r=>`${short(r.provider)} S=${r.score} (R ${r.R}, C ${r.C}, T ${r.T})`).join(" | ")],
+ COUNTER:["info",`counter round ${p.round}: buyer ₹${inr(p.buyer_offer)} → ${p.accepted?"accepted":"provider says ₹"+inr(p.provider_price)}`],
+ NEGOTIATED:["good",`negotiated ₹${inr(p.list_price)} → ₹${inr(p.agreed)} (saved ₹${inr(p.saved)})`],
+ CONTRACT:["money",`contract ${p.contract_id} signed by both agents, ₹${inr(p.escrow_held)} held in escrow (fee ₹${inr(p.fee)})`],
+ DELIVERY:["info",`${short(p.provider)} delivered in ${p.latency_ms} ms${p.error?", ERROR "+p.error:""}`],
+ VERDICT:[p.passed?"good":"bad",`verifier: ${p.passed?"PASS":"FAIL"} ${p.passed?"":(Array.isArray(p.checks)?p.checks.map(c=>c.name+" ("+c.detail+")").join("; "):p.reason)}`],
+ SETTLED:["good",`released ₹${inr(p.paid)} to ${short(p.provider)} after verification`],REFUNDED:["bad",`refund ₹${inr(p.amount)} to user, ${short(p.provider)} unpaid`],
+ PAID_WITHOUT_VERIFICATION:["bad",`paid ₹${inr(p.amount)} with no check; ground truth ${p.ground_truth_passed?"fine":"BAD WORK"}`],
+ NO_ELIGIBLE_BID:["bad",`no eligible bid for ${p.capability}`],BUDGET_REJECTED:["bad",`budget ₹${inr(p.budget)} below minimum ₹${inr(p.needed_minimum)}`],
+ TASK_COMPLETED:["good",`task complete. spent ₹${inr(p.spent)}, paid for bad work ₹${inr(p.wasted_on_bad_work)}`],TASK_FAILED:["bad",`task failed: ${p.reason}. spent ₹${inr(p.spent)}, bad-work spend ₹${inr(p.wasted_on_bad_work)}`],
+ AGENT_REGISTERED:["info",`agent ${p.agent_id} registered (key ${p.pubkey_prefix}…)`],FAILURE_INJECTED:["bad",`failure injected: ${short(p.provider)} → ${p.mode}`],
+ LEDGER_TXN:["money",`ledger ${p.src} → ${p.dst} ₹${inr(p.amount)} (${p.memo})`]}[T]||["info",JSON.stringify(p).slice(0,140)];
+ const d=document.createElement("div");d.className="ev k-"+m[0];d.innerHTML=`<span class="t">#${e.seq}</span><span class="k">${T}</span><span></span>`;d.lastChild.textContent=m[1];return d}
+const tape=$("tape");let es;function connect(){es=new EventSource("/stream");es.onmessage=m=>{const near=tape.scrollTop+tape.clientHeight>tape.scrollHeight-60;tape.appendChild(line(JSON.parse(m.data)));if(near)tape.scrollTop=tape.scrollHeight}}connect();
+async function J(u,o){const r=await fetch(u,o);return r.json()}
+async function refresh(){
+ const ag=await J("/registry/agents");$("prov").innerHTML="";const inj=$("inj");const first=!inj.children.length;
+ ag.filter(a=>a.role==="provider").sort((a,b)=>Object.keys(a.capabilities)[0].localeCompare(Object.keys(b.capabilities)[0])).forEach(a=>{const c=Object.keys(a.capabilities)[0],v=a.capabilities[c];
+  $("prov").insertAdjacentHTML("beforeend",`<tr><td>${a.name}${a.healthy?"":" (down)"}</td><td>${c}</td><td class="num">${inr(v.price_hint)}</td><td class="num">${inr(a.bond_paise||0)}</td><td class="num">${Math.round(v.claimed*100)}%</td><td class="num ${v.verified_reliability<.45?"low":v.verified_reliability>.65?"hi":""}">${Math.round(v.verified_reliability*100)}%<div class="bar"><i style="width:${v.verified_reliability*100}%"></i></div></td></tr>`);
+  if(first)inj.insertAdjacentHTML("beforeend",`<div class="row"><span>${a.name}</span><select class="sm" data-p="${a.id}" style="width:105px"><option>honest</option><option>fabricate</option><option>random</option><option>garbage</option><option>hallucinate</option><option>lazy_echo</option><option>subtle_drift</option><option>timeout</option></select></div>`)});
+ if(first)inj.querySelectorAll("select").forEach(s=>s.onchange=()=>fetch("/demo/inject",{method:"POST",headers:A,body:JSON.stringify({provider:s.dataset.p,mode:s.value})}));
+ const b=await J("/ledger/balances");$("ubal").textContent="₹"+inr(b["user:demo"]||0);
+ $("bals").innerHTML=Object.entries(b).filter(([k])=>!k.startsWith("escrow:")||b[k]).map(([k,v])=>`<div class="row"><span>${k}</span><b class="num">${inr(v)}</b></div>`).join("");
+ const [lv,av]=await Promise.all([J("/ledger/verify"),J("/audit/verify")]);
+ $("headhash").textContent=av.head?`head: ${av.head.slice(0,10)}…`:"head: BROKEN";$("aud").textContent=av.ok?`audit chain intact (${av.checked} records)`:`audit BROKEN at record #${av.broken_at_seq}`;$("aud").className="pill "+(av.ok?"ok":"bad");
+ const lok=lv.invariants.ok&&lv.reconcile_with_audit.ok;$("led").textContent=lok?"ledger balanced and reconciled":"ledger MISMATCH";$("led").className="pill "+(lok?"ok":"bad");
+ const bm=await J("/benchmark");if(bm.agentflow){$("bench").innerHTML=`<table><tr><th></th><th class="num">Correct</th><th class="num">Bad-work ₹</th><th class="num">Spent ₹</th></tr>`+Object.entries(bm).map(([k,v])=>`<tr><td>${k}</td><td class="num">${v.correct_deliverable_pct}%</td><td class="num">${v.avg_paid_for_bad_work_inr}</td><td class="num">${v.avg_spent_inr}</td></tr>`).join("")+`</table><p class="tiny">${Object.values(bm)[0].runs} runs per policy, averages. 'naive' spends less because it pays for garbage and delivers a wrong report. Compare the Correct column, not Spent.</p>`}}
+$("run").onclick=async()=>{$("run").disabled=true;await J("/tasks",{method:"POST",headers:{...H,"content-type":"application/json","idempotency-key":crypto.randomUUID()},body:JSON.stringify({goal:$("goal").value,budget_inr:+$("bud").value,priority:$("pri").value,mode:$("mode").value,n_reviews:150})});setTimeout(()=>$("run").disabled=false,1500)};
+$("vf").onclick=refresh;$("tm").onclick=async()=>{const r=await J("/demo/tamper",{method:"POST",headers:A});$("tmout").textContent=`edited record #${r.tampered_seq} directly in SQLite. Verification now: ${r.verify_now.ok?"still ok (unexpected)":"BROKEN at #"+r.verify_now.broken_at_seq}`;refresh()};
+$("rs").onclick=async()=>{await J("/demo/reset",{method:"POST",headers:A});tape.innerHTML="";es.close();connect();$("inj").innerHTML="";setTimeout(refresh,500)};
+(async()=>{const c=await J("/config");
+ if(c.dev_tokens){H["x-api-key"]="dev-user-key";A["x-admin-token"]="dev-admin-token"}
+ else{H["x-api-key"]=sessionStorage.af_key||prompt("User API key (ask the team)")||"";sessionStorage.af_key=H["x-api-key"];A["x-admin-token"]=sessionStorage.af_adm||prompt("Admin token (leave blank for view-only)")||"";sessionStorage.af_adm=A["x-admin-token"]}
+ refresh();setInterval(refresh,2500)})();
+</script></body></html>

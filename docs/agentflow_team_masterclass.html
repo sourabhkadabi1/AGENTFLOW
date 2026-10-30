@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENTFLOW — Complete Team Masterclass: Terms, Math, Trust & Workflow</title>
+<style>
+  :root {
+    --bg: #090e14;
+    --panel: #111a24;
+    --panel-alt: #172331;
+    --ink: #e6edf3;
+    --mute: #8ca0b5;
+    --line: #243548;
+    --teal: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14.5px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 22px 30px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #101b27 0%, #090e14 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  h1 { margin: 0; font-size: 22px; letter-spacing: 0.2px; color: #fff; }
+  .sub { color: var(--mute); font-size: 13.5px; margin-top: 4px; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .badge.teal { color: var(--teal); border-color: rgba(56,189,248,0.4); }
+  .badge.green { color: var(--green); border-color: rgba(52,211,153,0.4); }
+  .badge.amber { color: var(--amber); border-color: rgba(251,191,36,0.4); }
+  .badge.purple { color: var(--purple); border-color: rgba(167,139,250,0.4); }
+
+  .container { max-width: 1420px; margin: 0 auto; padding: 22px 28px; }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+  .tab {
+    padding: 10px 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--mute);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13.5px;
+    transition: all 0.15s ease;
+  }
+  .tab:hover { border-color: var(--teal); color: var(--ink); }
+  .tab.active {
+    background: var(--teal);
+    color: #06131f;
+    border-color: var(--teal);
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 17px; color: var(--teal); }
+  .card h3 { margin: 14px 0 6px; font-size: 14.5px; color: #fff; }
+  .card p { margin: 6px 0 10px; }
+
+  .grid-2 { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
+  .grid-equal { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 18px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 18px; }
+  @media (max-width: 980px) { .grid-2, .grid-equal { grid-template-columns: 1fr; } }
+
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .f-btn {
+    padding: 5px 11px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--panel-alt);
+    color: var(--mute);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .f-btn.active { background: var(--purple); color: #100826; border-color: var(--purple); }
+
+  .term-btn {
+    width: 100%;
+    text-align: left;
+    padding: 11px 14px;
+    margin-bottom: 7px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-alt);
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.12s;
+  }
+  .term-btn:hover, .term-btn.active {
+    border-color: var(--teal);
+    background: rgba(56,189,248,0.13);
+  }
+  .cat-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .cat-crypto { background: rgba(56,189,248,0.15); color: var(--teal); }
+  .cat-m2m { background: rgba(251,191,36,0.15); color: var(--amber); }
+  .cat-math { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .cat-money { background: rgba(52,211,153,0.15); color: var(--green); }
+  .cat-sec { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  .code-pill {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: rgba(255,255,255,0.07);
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: var(--amber);
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+  }
+  .formula-box {
+    background: rgba(167,139,250,0.1);
+    border-left: 4px solid var(--purple);
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13.5px;
+    margin: 10px 0;
+    color: #ede9fe;
+  }
+  .analogy-box {
+    background: rgba(56,189,248,0.08);
+    border-left: 4px solid var(--teal);
+    padding: 11px 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+  }
+  .judge-box {
+    background: rgba(52,211,153,0.09);
+    border-left: 4px solid var(--green);
+    padding: 11px 15px;
+    border-radius: 6px;
+    margin: 12px 0 4px;
+  }
+  .warn-box {
+    background: rgba(248,113,113,0.09);
+    border-left: 4px solid var(--red);
+    padding: 11px 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+  }
+  pre {
+    background: #060a0f;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #cfe0ee;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--line); text-align: left; }
+  th { color: var(--mute); font-weight: 600; background: rgba(255,255,255,0.03); }
+  .good { color: var(--green); font-weight: 600; }
+  .bad { color: var(--red); font-weight: 600; }
+  .amber { color: var(--amber); font-weight: 600; }
+  .teal { color: var(--teal); font-weight: 600; }
+
+  /* Interactive Sandbox Controls */
+  .slider-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--teal); }
+  .btn-action {
+    padding: 8px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--teal);
+    background: rgba(56,189,248,0.15);
+    color: var(--ink);
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 6px;
+    margin-top: 6px;
+  }
+  .btn-action:hover { background: var(--teal); color: #06131f; }
+  .btn-action.red { border-color: var(--red); background: rgba(248,113,113,0.15); }
+  .btn-action.red:hover { background: var(--red); color: #1f0606; }
+  .btn-action.green { border-color: var(--green); background: rgba(52,211,153,0.15); }
+  .btn-action.green:hover { background: var(--green); color: #051f14; }
+
+  .chain-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 14px 0;
+  }
+  .chain-node {
+    background: var(--panel-alt);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 155px;
+    flex: 1;
+  }
+  .chain-node b { display: block; color: var(--teal); font-size: 13px; margin-bottom: 3px; }
+  .chain-node small { color: var(--mute); font-size: 12px; display: block; }
+  .arrow { color: var(--amber); font-weight: bold; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>AGENTFLOW — Team Masterclass: Every Term, Formula, Trust Rule & Code Link</h1>
+    <div class="sub">Share this file with your teammates so everyone can explain the exact math, cryptography, escrow ledger, and M2M workflow to the judges.</div>
+  </div>
+  <div class="badges">
+    <span class="badge teal">16 Core Concepts Explained</span>
+    <span class="badge purple">Live Math & Reputation Calculators</span>
+    <span class="badge green">Double-Entry Escrow Simulator</span>
+    <span class="badge amber">ShopSmart Scenario Linked</span>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dictionary', this)">1. Interactive Concept & Term Encyclopedia (16 Terms)</button>
+    <button class="tab" onclick="switchTab('chain', this)">2. How Everything Links Together (Cause & Effect Map)</button>
+    <button class="tab" onclick="switchTab('sandbox', this)">3. Live Math, Reputation & Escrow Calculators</button>
+    <button class="tab" onclick="switchTab('story', this)">4. Run 1 (Cold Start) vs. Run 2 (Learned) Walkthrough</button>
+    <button class="tab" onclick="switchTab('roles', this)">5. 4-Person Team Pitch & Q&A Ownership</button>
+  </div>
+
+  <!-- =====================================================================
+       TAB 1: INTERACTIVE DICTIONARY OF ALL TERMS
+       ===================================================================== -->
+  <div id="dictionary" class="view active">
+    <div class="grid-2">
+      <div class="card">
+        <h2>Select Any Term to Master It</h2>
+        <div class="filter-bar">
+          <button class="f-btn active" onclick="filterTerms('ALL', this)">All (16)</button>
+          <button class="f-btn" onclick="filterTerms('M2M', this)">M2M & Market</button>
+          <button class="f-btn" onclick="filterTerms('CRYPTO', this)">Crypto & Identity</button>
+          <button class="f-btn" onclick="filterTerms('MATH', this)">Math & AI Brain</button>
+          <button class="f-btn" onclick="filterTerms('MONEY', this)">Money & Escrow</button>
+          <button class="f-btn" onclick="filterTerms('SEC', this)">Verifier & Audit</button>
+        </div>
+        <div id="term-list"></div>
+      </div>
+      <div class="card" id="term-detail"></div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       TAB 2: CAUSE & EFFECT LINKAGE MAP
+       ===================================================================== -->
+  <div id="chain" class="view">
+    <div class="card">
+      <h2>How All Concepts Connect in One Continuous Cause-and-Effect Chain</h2>
+      <p>In AGENTFLOW, no concept exists in isolation. Every mechanism solves a specific failure mode of the step before it:</p>
+
+      <div class="chain-flow">
+        <div class="chain-node">
+          <b>1. Ed25519 + Nonce</b>
+          <small>Proves WHO is talking &amp; blocks replay attacks (`signing.py`)</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>2. Capability Registry</b>
+          <small>Finds live agents &amp; tracks Verified $R_i$ vs Claimed $R_i$ (`registry.py`)</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>3. Policy Brain + RFQ</b>
+          <small>Sets $(w_R, w_C, w_T)$ &amp; solicits parallel bids (`policy.py`)</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>4. Utility Math ($S_i$)</b>
+          <small>Filters hard limits &amp; ranks bids (`scoring.py`)</small>
+        </div>
+      </div>
+
+      <div class="chain-flow">
+        <div class="chain-node">
+          <b>5. 2-Round Counter-Offer</b>
+          <small>Uses rival net bids to lower price down to floor (`orchestrator.py`)</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>6. Dual-Signed Contract</b>
+          <small>Both agents sign canonical JSON terms (`/accept`)</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>7. Atomic Escrow Hold</b>
+          <small>Locks Price + 5% Fee in `escrow:c-id` (`ledger.py`)</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>8. Fail-Closed Verifier</b>
+          <small>Checks output against input ground truth (`verifier.py`)</small>
+        </div>
+      </div>
+
+      <div class="chain-flow">
+        <div class="chain-node">
+          <b>9A. If Verifier PASSES</b>
+          <small>Escrow releases Price to provider + 5% to platform; $R_i$ increases</small>
+        </div>
+        <span class="arrow">OR</span>
+        <div class="chain-node">
+          <b>9B. If Verifier FAILS</b>
+          <small>100% Refund to user + ₹1 Bond Slashed + $R_i$ drops + Re-Bid!</small>
+        </div>
+        <span class="arrow">&rarr;</span>
+        <div class="chain-node">
+          <b>10. SHA-256 Hash Chain</b>
+          <small>Locks every event &amp; reconciles with Ledger (`audit.py`)</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>The "What Breaks If You Remove X?" Table (Use This When Judges Ask "Why Did You Build X?")</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Component / Term</th>
+            <th>Where It Lives</th>
+            <th>What Breaks in the Scenario If We Remove It?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Ed25519 Signatures + Nonce Cache</strong></td>
+            <td><span class="code-pill">common/signing.py</span></td>
+            <td class="bad">A rogue script can impersonate CleanCo, forge a cheap bid, or replay an old HTTP request to drain funds.</td>
+          </tr>
+          <tr>
+            <td><strong>Stage Budget Reserve (`reserve`)</strong></td>
+            <td><span class="code-pill">gateway/orchestrator.py</span></td>
+            <td class="bad">The Buyer might spend ₹19 of a ₹20 budget on Stage 1 (`clean_data`) and run out of money before Stage 2 (`sentiment`) and Stage 3 (`report`).</td>
+          </tr>
+          <tr>
+            <td><strong>Verified Reliability ($R_i$) vs Claimed</strong></td>
+            <td><span class="code-pill">gateway/registry.py</span></td>
+            <td class="bad">Cheating agents (`QuickClean`, `BargainSent`, `CheapReport`) all claim 99% reliability in their manifests. Without verified $R_i$, the Buyer falls for false advertising forever.</td>
+          </tr>
+          <tr>
+            <td><strong>Budget Normalization ($C = P / B_{stage}$)</strong></td>
+            <td><span class="code-pill">gateway/scoring.py</span></td>
+            <td class="bad">If you use min-max normalization across bids, a tiny 5-paise price difference blows up to a 100% cost penalty (`C=1.0`), forcing the buyer to pick a known cheater.</td>
+          </tr>
+          <tr>
+            <td><strong>Escrow State Guard (`HELD` &rarr; `RELEASED`)</strong></td>
+            <td><span class="code-pill">gateway/ledger.py</span></td>
+            <td class="bad">Without an atomic SQLite transaction (`BEGIN IMMEDIATE`) and state guard, network retries or race conditions could pay a provider twice or leave money stuck when a buyer crashes.</td>
+          </tr>
+          <tr>
+            <td><strong>Independent Fail-Closed Verifier</strong></td>
+            <td><span class="code-pill">gateway/verifier.py</span></td>
+            <td class="bad">As proven by the `naive` baseline in `benchmark.py`, paying on delivery (`HTTP 200 OK`) results in <strong>0% correct reports</strong> and 100% wasted spend on fabricated data.</td>
+          </tr>
+          <tr>
+            <td><strong>Sybil Bond + Slashing (v2)</strong></td>
+            <td><span class="code-pill">gateway/ledger.py</span></td>
+            <td class="bad">Without a financial bond (`bond:provider`), a cheating provider loses nothing when caught—it can just spam bad outputs for free. Slashing imposes a direct economic penalty (`₹1.00` per fraud verdict).</td>
+          </tr>
+          <tr>
+            <td><strong>SHA-256 Audit Chain + Reconciliation</strong></td>
+            <td><span class="code-pill">gateway/audit.py</span></td>
+            <td class="bad">Someone with database access could silently edit an old payment or inflate an account balance in SQLite (`ledger` table) without anyone knowing.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       TAB 3: LIVE INTERACTIVE MATH, REPUTATION & ESCROW SANDBOX
+       ===================================================================== -->
+  <div id="sandbox" class="view">
+    <div class="grid-3">
+
+      <!-- CALCULATOR 1: SCORING FORMULA -->
+      <div class="card">
+        <h2>1. Live Bid Scoring Calculator (`scoring.py`)</h2>
+        <p>Formula: <code>S = w_R * R - w_C * (Price / StageBudget) - w_T * (ETA / Deadline)</code></p>
+        <div class="slider-row">
+          <span>Preset Scenario:</span>
+          <div>
+            <button class="btn-action" onclick="setScorePreset('cold')">Run 1: Cold Start</button>
+            <button class="btn-action green" onclick="setScorePreset('learned')">Run 2: After Learning</button>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>Priority Mode:</label>
+          <select id="sim-prio" onchange="calcScoring()" style="background:var(--panel-alt);color:var(--ink);border:1px solid var(--line);padding:5px;border-radius:5px;">
+            <option value="0.40,0.40,0.20">Balanced (wR=0.40, wC=0.40, wT=0.20)</option>
+            <option value="0.72,0.18,0.10">Auto: High Compliance (wR=0.72, wC=0.18, wT=0.10)</option>
+            <option value="0.15,0.75,0.10">Lowest Cost (wR=0.15, wC=0.75, wT=0.10)</option>
+          </select>
+        </div>
+        <div class="slider-row">
+          <span>QuickClean Verified R: <b id="qc-r-val">0.50</b></span>
+          <input type="range" id="qc-r" min="0.20" max="0.95" step="0.05" value="0.50" oninput="calcScoring()">
+        </div>
+        <div class="slider-row">
+          <span>CleanCo Verified R: <b id="cc-r-val">0.50</b></span>
+          <input type="range" id="cc-r" min="0.20" max="0.95" step="0.05" value="0.50" oninput="calcScoring()">
+        </div>
+        <div id="score-output" style="margin-top:12px;"></div>
+      </div>
+
+      <!-- CALCULATOR 2: BAYESIAN REPUTATION -->
+      <div class="card">
+        <h2>2. Bayesian Reputation Simulator (`registry.py`)</h2>
+        <p>Starts at <code>Beta(2, 2)</code> &rarr; <code>R = (succ + 2) / (succ + fail + 4)</code> with <code>0.92</code> decay per task:</p>
+        <div style="margin: 12px 0;">
+          <button class="btn-action green" onclick="simRep(true)">+ Verifier PASS</button>
+          <button class="btn-action red" onclick="simRep(false)">- Verifier FAIL (Cheat Caught)</button>
+          <button class="btn-action" onclick="simRep('reset')">Reset to Cold Start</button>
+        </div>
+        <div id="rep-output"></div>
+      </div>
+
+      <!-- CALCULATOR 3: DOUBLE-ENTRY ESCROW & SLASHING -->
+      <div class="card">
+        <h2>3. Double-Entry Escrow &amp; Slashing Simulator (`ledger.py`)</h2>
+        <p>See how integer paise move atomically across accounts (`Price = 200p`, `5% Fee = 10p`, `Gross = 210p`):</p>
+        <div style="margin: 10px 0;">
+          <button class="btn-action" onclick="simLedger('hold')">1. Sign Contract &amp; HOLD Escrow</button>
+          <button class="btn-action green" onclick="simLedger('release')">2A. Verifier PASS &rarr; RELEASE</button>
+          <button class="btn-action red" onclick="simLedger('refund')">2B. Verifier FAIL &rarr; REFUND + SLASH</button>
+          <button class="btn-action" onclick="simLedger('reset')">Reset Ledger</button>
+        </div>
+        <div id="ledger-output"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       TAB 4: RUN 1 (COLD START) VS RUN 2 (LEARNED) STORYBOARD
+       ===================================================================== -->
+  <div id="story" class="view">
+    <div class="grid-equal">
+      <div class="card">
+        <h2>Run 1: Cold Start (Why Cheap Cheaters Win Bids First, Get Caught, and Get Paid ₹0)</h2>
+        <p>When you start AGENTFLOW freshly (`./scripts/run_all.sh`), the database has <strong>zero transaction history</strong>. Here is the exact sequence that happens when you click <strong>Run Task</strong>:</p>
+        <ol>
+          <li><strong>Equal Starting Trust ($R = 0.500$):</strong> Every provider starts with `succ=0, fail=0`. Using $\text{Beta}(2,2)$, both honest `CleanCo` and cheating `QuickClean` have Verified Reliability $R = \frac{0+2}{0+0+4} = 0.500$ (even though `QuickClean` claims `0.99` in its marketing manifest).</li>
+          <li><strong>Price Breaks the Tie on Attempt 1:</strong> Because both have $R = 0.500$, `QuickClean` (₹1.00 quote = 105p gross) scores higher than `CleanCo` (₹2.00 quote = 210p gross).</li>
+          <li><strong>Contract &amp; Escrow Hold:</strong> Buyer signs contract `c-1` with `QuickClean` and locks `105 paise` in `escrow:c-1`.</li>
+          <li><strong>Cheater Delivers Poisoned Data:</strong> `QuickClean` runs in `fabricate` mode—it skips deduplication and injects fake 5-star reviews (`id: "fake-0"`).</li>
+          <li><strong>Verifier Catches It Deterministically:</strong> `gateway/verifier.py` compares output IDs against input ground truth (`common/domain.py`), flags `no_fabricated_ids` and `completeness` as `FAIL`, and signs a rejection verdict.</li>
+          <li><strong>Atomic Refund + Bond Slash + Reputation Drop:</strong>
+            <ul>
+              <li>`escrow:c-1` refunds `105 paise` back to `user:demo` (User lost ₹0!).</li>
+              <li>`bond:provider-quickclean` is slashed by `100 paise` (₹1.00 penalty moved to `platform:slashed`).</li>
+              <li>`QuickClean` reputation updates to `succ=0, fail=1` &rarr; $R = \frac{2}{5} = 0.400$.</li>
+            </ul>
+          </li>
+          <li><strong>Autonomous Retry (Attempt 2):</strong> Within the same task, `orchestrator.py` excludes `QuickClean`, re-bids Stage 1 to `CleanCo`, negotiates `CleanCo` down from `200p` to `170p`, verifies `PASS`, releases payment, and upgrades `CleanCo` to $R = \frac{1+2}{1+0+4} = 0.600$!</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>Run 2: After Learning (Why Run 2 Finishes in Half the Time with 0 Failures)</h2>
+        <p>When you click <strong>Run Task</strong> a second time on the dashboard without resetting:</p>
+        <ol>
+          <li><strong>Reputation Gap Is Now Established:</strong>
+            <ul>
+              <li>`CleanCo` Verified $R = 0.600$ (1 verified pass)</li>
+              <li>`QuickClean` Verified $R = 0.400$ (1 verified failure, bond slashed)</li>
+            </ul>
+          </li>
+          <li><strong>Trust Outweighs the Price Gap:</strong>
+            <ul>
+              <li>Under `Balanced` ($w_R=0.40, w_C=0.40$) or `Auto: High Compliance` ($w_R=0.72$), `CleanCo`'s higher reliability bonus ($+w_R \cdot 0.60$) beats `QuickClean`'s lower score ($+w_R \cdot 0.40$).</li>
+            </ul>
+          </li>
+          <li><strong>Zero Wasted Calls:</strong> The Buyer skips `QuickClean`, `BargainSent`, and `CheapReport` on Attempt 1 across all three stages (`clean_data` &rarr; `sentiment` &rarr; `report`).</li>
+          <li><strong>Measured Benchmark Proof (`docs/BENCHMARK.md`):</strong>
+            <ul>
+              <li><strong>Naive (Pay on Delivery):</strong> 0% correct reports, ₹4.20 wasted on bad work per task.</li>
+              <li><strong>Cheapest + Verification:</strong> 100% correct reports, ₹0 wasted, but suffers <strong>3 bad deliveries every single run</strong> (5.6s avg runtime) because it never learns.</li>
+              <li><strong>AGENTFLOW:</strong> 100% correct reports, ₹0 wasted, bad deliveries drop from <strong>3 &rarr; 0</strong>, and runtime drops in half (<strong>2.9s</strong>)!</li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       TAB 5: 4-PERSON TEAM ROLE & JUDGE Q&A CHEAT SHEET
+       ===================================================================== -->
+  <div id="roles" class="view">
+    <div class="grid-equal">
+      <div class="card">
+        <h2>Teammate 1: Backend, Cryptography &amp; Settlement Lead</h2>
+        <p><strong>Files You Own:</strong> <span class="code-pill">common/signing.py</span> <span class="code-pill">gateway/ledger.py</span> <span class="code-pill">gateway/db.py</span> <span class="code-pill">gateway/audit.py</span></p>
+        <p><strong>Terms You Explain to Judges:</strong> Ed25519 Signatures, Nonce Replay Cache, Double-Entry Ledger, Integer Paise, Atomic Escrow State Machine (`HELD` &rarr; `RELEASED`/`REFUNDED`), Idempotency Keys, Orphan Crash Recovery, Sybil Bond Slashing, SHA-256 Hash Chain.</p>
+        <div class="judge-box">
+          <strong>Your Killer Line:</strong> "Every credit movement happens in integer paise inside a single SQLite `BEGIN IMMEDIATE` transaction guarded by an idempotency key and contract state check—and `audit.reconcile_ledger()` proves 1-to-1 parity between our double-entry ledger and our SHA-256 event chain."
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Teammate 2: Buyer Brain, Game Theory &amp; Scoring Lead</h2>
+        <p><strong>Files You Own:</strong> <span class="code-pill">gateway/orchestrator.py</span> <span class="code-pill">gateway/policy.py</span> <span class="code-pill">gateway/scoring.py</span> <span class="code-pill">gateway/registry.py</span> <span class="code-pill">gateway/llm.py</span></p>
+        <p><strong>Terms You Explain to Judges:</strong> Neuro-Symbolic Separation of Powers, Dynamic Policy Brain (`auto` mode), Stage Budget Reservation, Trust-Adjusted Utility Scoring ($S = w_R R - w_C C - w_T T$), Bounded 2-Round Counter-Offers, Beta(2,2) Bayesian Reputation with 0.92 Decay.</p>
+        <div class="judge-box">
+          <strong>Your Killer Line:</strong> "LLMs never touch wallets or verdicts. Our Gemini Policy Brain interprets semantic intent and sets risk weights $(w_R, w_C, w_T)$, while deterministic Python enforces stage budget reserves, Beta(2,2) reputation scoring, and bounded 2-round negotiation."
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Teammate 3: Independent Verifier &amp; Provider Microservices Lead</h2>
+        <p><strong>Files You Own:</strong> <span class="code-pill">gateway/verifier.py</span> <span class="code-pill">providers/provider_app.py</span> <span class="code-pill">providers/profiles.py</span> <span class="code-pill">common/gemini.py</span></p>
+        <p><strong>Terms You Explain to Judges:</strong> Fail-Closed Verification, Input Ground-Truth Recounting, ID-Text Binding (`id_text_binding`), LLM Narrative Number Grounding (`narrative_numbers_grounded`), Adversarial Cheat Modes (`fabricate`, `random`, `hallucinate`, `lazy_echo`, `subtle_drift`, `timeout`).</p>
+        <div class="judge-box">
+          <strong>Your Killer Line:</strong> "Our Verifier treats every provider—including our Gemini-powered `GemReport` agent—as untrusted. When `GemReport` hallucinates an ungrounded '73% sales growth' stat in its prose, `verifier.py` catches that '73' doesn't exist in the verified upstream sentiment counts and blocks payment."
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Teammate 4: Control Room Dashboard, Benchmark &amp; Live Demo Driver</h2>
+        <p><strong>Files You Own:</strong> <span class="code-pill">dashboard/index.html</span> <span class="code-pill">gateway/main.py</span> <span class="code-pill">scripts/benchmark.py</span> <span class="code-pill">docs/DEMO_SCRIPT.md</span></p>
+        <p><strong>Terms You Explain to Judges:</strong> Server-Sent Events (SSE) Live Tape, Claimed vs. Verified Reliability Gap, Live Failure Injection (`/demo/inject`), Live SQLite Audit Tamper Detection (`/demo/tamper`), External Head Hash Verification, 3-Arm Reproducible Benchmark.</p>
+        <div class="judge-box">
+          <strong>Your Killer Line:</strong> "Watch the top-right header pills: our live SSE control room shows Claimed 99% vs. Verified 40% reliability, lets you inject live provider sabotage mid-flight, and detects a single-byte SQLite edit the instant we click Tamper."
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TERMS = [
+  {
+    id: "m2m",
+    name: "1. M2M Coordination (Machine-to-Machine)",
+    cat: "M2M",
+    analogy: "Instead of a human manager manually searching Upwork, messaging freelancers, checking their work, and sending bank transfers, software agents autonomously discover, negotiate, contract, verify, and pay other software agents via APIs in milliseconds.",
+    scenario: "ShopSmart gives one high-level goal ('Analyze customer reviews and produce a report, Budget ₹20'). The Buyer Agent autonomously coordinates 3 separate specialist provider processes (`clean_data` -> `sentiment` -> `report`) without human intervention.",
+    files: ["gateway/orchestrator.py -> run_task()", "providers/provider_app.py"],
+    math: "3-Stage Directed Acyclic Graph (DAG): Stage 1 output (`cleaned reviews`) automatically becomes Stage 2 input (`labels + complaint_themes`), which becomes Stage 3 input (`final executive report`).",
+    links: "Requires Ed25519 Identity (so machines can trust who they talk to), RFQ/Counter-Offers (to agree on price), and Escrow + Verifier (so machines don't get scammed).",
+    judge: "We didn't build a multi-agent chat room; we built an autonomous M2M supply chain where independent processes discover, contract, verify, and settle across a 3-stage pipeline."
+  },
+  {
+    id: "ed25519",
+    name: "2. Ed25519 Cryptographic Signatures & Identity",
+    cat: "CRYPTO",
+    analogy: "A tamper-proof digital wax seal. Anyone with your public key can verify that a message came from your private key and that not a single character was changed in transit.",
+    scenario: "Every agent (`buyer-agent-1`, `verifier-1`, and all 8 providers on ports `:9101`–`:9108`) generates an Ed25519 keypair in `.keys/`. Every request AND every HTTP response carries `X-Agent-Id`, `X-Timestamp`, `X-Nonce`, and `X-Signature`.",
+    files: ["common/signing.py -> sign_headers(), verify_headers()", "gateway/main.py -> /registry/register"],
+    math: "Canonical payload signed = `METHOD \\n PATH \\n TIMESTAMP \\n NONCE \\n SHA256(BODY)`. If an attacker changes ₹1.00 to ₹9.00 in transit, `SHA256(BODY)` changes and `verify_blob()` returns `False (bad_signature)`.",
+    links: "Protects `/registry/register` (First-Come Key Binding: once `provider-cleanco` registers its public key, no other key can claim that ID) and binds dual-signed contracts (`/accept`).",
+    judge: "A registered agent name proves nothing. In AGENTFLOW, every agent-to-agent request and response is Ed25519-signed over method, path, timestamp, nonce, and SHA-256 body hash."
+  },
+  {
+    id: "nonce",
+    name: "3. Nonce Cache & 30-Second Replay Protection",
+    cat: "CRYPTO",
+    analogy: "A concert ticket barcode that can only be scanned once and expires after 30 seconds. Even if a thief photocopies your signed ticket, the gate scanner rejects the second scan.",
+    scenario: "If a malicious network sniffer captures a valid signed `/rfq` or `/counter` packet from the Buyer Agent and re-sends it 2 seconds later, `NonceCache.check_and_store()` rejects it with `HTTP 401 replayed_nonce`.",
+    files: ["common/signing.py -> NonceCache, MAX_SKEW_S = 30", "tests/test_integration.py -> test_02"],
+    math: "Accepts request iff `|now - X-Timestamp| <= 30s` AND `(agent_id, X-Nonce)` is not in `NonceCache`. Stores `(agent_id, nonce)` for `2 * MAX_SKEW_S` (60s).",
+    links: "Works alongside Idempotency Keys (`idem_key` in SQLite) to guarantee network retries or packet replays can never duplicate actions or payments.",
+    judge: "Signing alone doesn't stop packet replay. We pair Ed25519 signatures with a 30-second clock-skew window and a thread-safe per-agent NonceCache."
+  },
+  {
+    id: "registry",
+    name: "4. Capability Registry & Service Manifests",
+    cat: "M2M",
+    analogy: "A live, machine-readable Yellow Pages directory where service providers publish what they can do, their API URL, their starting price hint, and their health status.",
+    scenario: "On startup, each provider process (`cleanco`, `quickclean`, `sentipro`, etc.) sends a signed `POST /registry/register` with its `manifest` (`capability`, `version`, `price_hint`, `claimed_reliability`). A background loop pings `/health` every 3 seconds with 2-miss hysteresis.",
+    files: ["gateway/registry.py -> register(), discover()", "gateway/main.py -> _health_loop()"],
+    math: "Hysteresis rule: `healthy = 0 if consecutive_misses >= 2 else 1`. One slow ping never kills an agent, and if all providers are flagged unhealthy, `orchestrator.candidates()` still attempts an RFQ as the true liveness test.",
+    links: "Feeds `orchestrator.py` during Stage Pre-Check (calculating minimum pipeline floor) and Stage Discovery.",
+    judge: "Providers self-register with signed capability manifests, and our gateway uses 2-miss hysteresis health checks plus cold-start fallbacks so a transient network blip never breaks procurement."
+  },
+  {
+    id: "rfq",
+    name: "5. RFQ (Request for Quote) & Parallel Bidding",
+    cat: "M2M",
+    analogy: "Sending an invitation to tender to all qualified contractors at the exact same millisecond and giving them 3 seconds to submit a binding price and delivery time (ETA).",
+    scenario: "At the start of each stage (`clean_data`, `sentiment`, `report`), the Buyer sends parallel signed `POST /rfq` calls (`asyncio.gather`) with `task_size` (e.g., 150 reviews) to all discovered providers.",
+    files: ["gateway/orchestrator.py -> _procure()", "providers/provider_app.py -> /rfq"],
+    math: "Provider dynamic pricing: `price = base_price + (50 if task_size > 1000 else 0)`. Each provider responds with `{rfq_id, agent_id, price, eta_ms, claimed_reliability}`.",
+    links: "Raw RFQ responses go straight into Hard Constraint Filtering (budget, deadline, identity, reliability floor) before Scoring.",
+    judge: "We don't use static price tables. The Buyer fires parallel asynchronous RFQs to every live provider process and collects real-time signed quotes."
+  },
+  {
+    id: "policy_brain",
+    name: "6. Neuro-Symbolic Policy Brain (`policy.py`)",
+    cat: "MATH",
+    analogy: "An executive strategist (LLM) sets the company's risk appetite ('This is a boardroom audit—prioritize accuracy over cost'), while the accounting department (deterministic Python) enforces the exact math and spending caps.",
+    scenario: "When `priority='auto'` is chosen, `gateway/policy.py` inspects the user's goal text and budget via Gemini (with a deterministic heuristic fallback) and outputs a bounded policy profile (`HIGH_COMPLIANCE`, `COST_SAVER`, `LOW_LATENCY`, or `BALANCED`).",
+    files: ["gateway/policy.py -> derive_policy()", "gateway/llm.py -> interpret_goal()"],
+    math: "Outputs normalized weight tuple `(w_R, w_C, w_T)` where `w_R + w_C + w_T = 1.0`, `min_reliability` floor in `[0.20, 0.50]`, and negotiation `discount_target` in `[0.10, 0.20]`.",
+    links: "Directly parameterizes `scoring.rank()` and the counter-offer target in `orchestrator._procure()` while obeying Invariant #1 (LLMs never touch money or verdicts).",
+    judge: "We use a Neuro-Symbolic architecture: the LLM brain synthesizes context-dependent risk weights $(w_R, w_C, w_T)$ from the user's prompt, while deterministic code enforces hard budget caps and escrow."
+  },
+  {
+    id: "reserve",
+    name: "7. Stage Budget Allocation & Forward Reserve",
+    cat: "MONEY",
+    analogy: "If you have ₹20 to build a 3-part project (Foundation, Walls, Roof), you must set aside enough money for the Walls and Roof before you bid on the Foundation.",
+    scenario: "Before starting Stage 1 (`clean_data`), `orchestrator.py` checks the minimum `price_hint` (+ 5% fee) of every stage. During Stage $i$, the Buyer calculates `reserve` = minimum cost needed to complete all remaining stages $i+1 \dots N$.",
+    files: ["gateway/orchestrator.py -> run_task()"],
+    math: "`floor = sum(gross(hint[cap]) for cap in pipeline)` (if `floor > budget`, reject immediately before spending ₹0). At stage `i`: `reserve = sum(gross(hints[x]) for x in pipeline[i+1:])`, and `cap_budget = budget - spent - reserve`.",
+    links: "Any bid where `gross(price) > cap_budget` is deterministically rejected (`BID_REJECTED: over_budget`) before scoring.",
+    judge: "Our Buyer Agent never strand-spends halfway through a DAG. It pre-computes a forward reserve for downstream stages and enforces `cap_budget = remaining - reserve` at every stage."
+  },
+  {
+    id: "scoring",
+    name: "8. Trust-Adjusted Utility Scoring ($S_i$)",
+    cat: "MATH",
+    analogy: "Grading contractors on a weighted report card: you add points for proven past reliability ($R$) and subtract points for how much of your stage budget they consume ($C$) and how slow they are ($T$).",
+    scenario: "Every eligible bid is scored using `S_i = w_R * R_i - w_C * C_i - w_T * T_i`. Crucially, $C_i$ is normalized against the `stage_budget` (`price / cap_budget`), NOT min-max across bids.",
+    files: ["gateway/scoring.py -> rank()"],
+    math: "$$S_i = w_R R_i - w_C \\min\\left(1, \\frac{\\text{gross}(\\text{price}_i)}{\\text{cap\\_budget}}\\right) - w_T \\min\\left(1, \\frac{\\text{eta}_i}{\\text{deadline}}\\right)$$",
+    links: "Reads $R_i$ from `registry.reliability()` and weights from `policy.py`. Winner advances to the Bounded 2-Round Negotiation loop.",
+    judge: "Why normalize cost by stage budget instead of min-max across bids? Because min-max blows a tiny 5-paise gap up to a full 1.0 penalty, which would force the buyer to keep picking a known cheater."
+  },
+  {
+    id: "beta_rep",
+    name: "9. Bayesian Beta(2,2) Reputation with 0.92 Decay",
+    cat: "MATH",
+    analogy: "Every new driver starts with a neutral 50% safety rating. Every verified safe trip nudges their score up; every crash nudges it down. Older trips slowly fade (`0.92` decay) so one mistake doesn't ruin them forever, and old glory doesn't excuse new fraud.",
+    scenario: "Providers claim 95%–99% reliability in their manifests (`claimed_reliability`), which the Buyer completely ignores. Instead, `registry.py` computes `verified_reliability` strictly from independent Verifier verdicts.",
+    files: ["gateway/registry.py -> reliability(), record(), PRIOR_A=2.0, PRIOR_B=2.0, DECAY=0.92"],
+    math: "Before each update: `succ = 0.92 * succ`, `fail = 0.92 * fail`. Then `+1` to `succ` (if PASS) or `fail` (if FAIL). Verified Reliability: $$R = \\frac{\\text{succ} + 2.0}{\\text{succ} + \\text{fail} + 4.0}$$",
+    links: "Updated exclusively inside `orchestrator._procure()` after `verifier.verify()` returns a verdict.",
+    judge: "We use a Bayesian Beta(2,2) prior with 0.92 exponential decay updated strictly from independent verifier verdicts—solving both the cold-start division-by-zero problem and self-reported score lying."
+  },
+  {
+    id: "negotiation",
+    name: "10. Bounded 2-Round Game-Theory Negotiation",
+    cat: "M2M",
+    analogy: "Telling your top-choice contractor: 'Your rival offered to do this for ₹1.00. Can you match ₹1.00, or meet me halfway, so we can sign right now?'",
+    scenario: "Once the Buyer selects the highest-scoring provider (e.g., `CleanCo` at 200 paise), it checks rival net bids (or asks for a 15–20% policy discount if no rival is cheaper) and sends up to 2 `/counter` rounds.",
+    files: ["gateway/orchestrator.py -> MAX_NEG_ROUNDS = 2", "providers/provider_app.py -> /counter"],
+    math: "Buyer initial offer: `target = min(rival_net_prices) if cheaper_rival else int(price * (1 - discount_target))`. Provider logic: if `offer >= min_price` (private floor), accept! Else on Round 1, provider concedes halfway: `new_price = max(min_price, (current_price + offer) // 2)`.",
+    links: "Agreed price is locked into the canonical `terms` dictionary and signed by both parties in `/accept`.",
+    judge: "Negotiation is bounded to 2 deterministic rounds: the Buyer uses competing bids as leverage, and the Provider concedes halfway down toward its private margin floor."
+  },
+  {
+    id: "contract",
+    name: "11. Dual-Signed Cryptographic Contract (`/accept`)",
+    cat: "CRYPTO",
+    analogy: "A legal service agreement signed in ink by both the Buyer and the Seller over the exact price, deadline, capability version, and quality condition (`acceptance: verifier_pass`).",
+    scenario: "Before a single paisa is locked in escrow, the Buyer constructs canonical sorted JSON terms and sends `POST /accept` to the winning provider. The provider checks `price >= min_price` and returns its Ed25519 signature over the exact terms bytes.",
+    files: ["gateway/orchestrator.py -> terms, /accept", "providers/provider_app.py -> accept()"],
+    math: "`terms_bytes = json.dumps(terms, sort_keys=True, separators=(',', ':')).encode()`. Stored in SQLite `contracts` table with both `buyer_sig` and `provider_sig`.",
+    links: "Created atomically (`with db.tx():`) alongside `ledger.hold()` so a contract cannot exist without funded escrow.",
+    judge: "Neither party can repudiate the deal later: our `contracts` table stores dual Ed25519 signatures from both the Buyer and Provider over the canonical JSON contract terms."
+  },
+  {
+    id: "escrow_ledger",
+    name: "12. Double-Entry Integer-Paise Escrow Ledger",
+    cat: "MONEY",
+    analogy: "A bank vault + accounting book where every rupee is tracked as 100 integer paise (to avoid floating-point rounding bugs), every debit has an equal and opposite credit, and money is held by a neutral third party (`escrow:c-id`) until the inspection passes.",
+    scenario: "When contract `c-123` is signed for `price=200p` (`fee=10p`, `gross=210p`), `ledger.hold()` moves `210p` from `user:demo` to `escrow:c-123`. If `verifier.py` passes, `ledger.release()` moves `200p` to `agent:provider` and `10p` to `platform:fees`. If it fails, `ledger.refund()` returns all `210p` to `user:demo`.",
+    files: ["gateway/ledger.py -> transfer(), hold(), release(), refund(), invariants()", "common/domain.py -> gross(), fee()"],
+    math: "Gross formula (5% = 500 bps): `gross(p) = p + ceil(p * 500 / 10000)`. Ledger Invariant: $$\\sum \\text{debit} = \\sum \\text{credit}, \\quad \\forall a \\neq \\text{mint}: \\text{balance}(a) \\ge 0, \\quad \\forall c \\neq \\text{HELD}: \\text{balance}(\\text{escrow}:c) = 0$$",
+    links: "Every transfer requires a unique `idem_key` (Idempotency Key) and emits a `LEDGER_TXN` event into `audit.py`.",
+    judge: "We never use floats for money and never let an LLM touch balances. Our double-entry ledger runs in integer paise with atomic `HELD -> RELEASED/REFUNDED` state guards and startup orphan recovery."
+  },
+  {
+    id: "idempotency",
+    name: "13. Idempotency Keys & Orphan Crash Recovery",
+    cat: "MONEY",
+    analogy: "If you click 'Pay Now' twice on a laggy Wi-Fi connection, the bank's idempotency key ensures you are only charged once. And if the power goes out mid-transaction, the vault automatically returns held funds on reboot.",
+    scenario: "Every `POST /tasks` and every `ledger.transfer()` carries an `idem_key` (`UNIQUE` constraint in SQLite). And if the gateway process crashes while a contract is `HELD`, `orchestrator.recover_orphans()` refunds all `HELD` contracts on startup.",
+    files: ["gateway/ledger.py -> transfer()", "gateway/orchestrator.py -> recover_orphans()", "tests/test_unit.py"],
+    math: "`SELECT txn_id FROM txns WHERE idem_key=?` -> if exists, return `{'txn_id': ex['txn_id'], 'duplicate': True}` without moving money.",
+    links: "Guarantees zero stuck escrow (`unsettled_escrow_after_close == []` in `/ledger/verify`).",
+    judge: "We tested every failure path: duplicate POST requests, double-release attempts, mid-transaction DB faults, and buyer process crashes. Money is never double-spent or stranded in escrow."
+  },
+  {
+    id: "verifier",
+    name: "14. Fail-Closed Deterministic Verifier & LLM Grounding",
+    cat: "SEC",
+    analogy: "An automated quality inspector at the factory gate who doesn't trust the supplier's word—it weighs every box, cross-checks every serial number against the shipping manifest, and fact-checks every number in the executive summary.",
+    scenario: "After a provider returns its JSON deliverable from `/execute`, `gateway/verifier.py` runs capability-specific checks against the task input ground truth (`common/domain.py`). Any exception or missing field fails closed (`passed=False`).",
+    files: ["gateway/verifier.py -> verify(), _clean(), _sent(), _report()"],
+    math: "Checks: (1) `clean_data`: `no_fabricated_ids`, `id_text_binding` (no swapped texts), `no_duplicate_text`, `completeness`, `rating_preserved`. (2) `sentiment`: `covers_every_review_once`, `score_matches_label`, `agreement_with_star_ratings >= 0.75`, `theme_counts_match_recount`. (3) `report`: exact breakdown counts, exact top-5 complaint ranking, 5 `distinct_recommendations`, and regex extraction of every number in Gemini's `narrative` to prove it exists in the verified data (`narrative_numbers_grounded`).",
+    links: "Signs its verdict with `VERIFIER_KEY`. A `PASS` triggers `ledger.release()`; a `FAIL` triggers `ledger.refund()` + `ledger.slash_bond()`.",
+    judge: "Even when our Gemini-backed `GemReport` provider writes the executive prose, our deterministic verifier extracts every number from the LLM text and rejects the report if a single statistic (like '73% growth') is hallucinated."
+  },
+  {
+    id: "sybil_bond",
+    name: "15. Sybil Bond Staking, Fraud Slashing & Probation (v2)",
+    cat: "SEC",
+    analogy: "A security deposit required to open a shop in the mall. If you get caught selling counterfeit goods, the mall refunds the customer AND confiscates ₹1.00 from your security deposit.",
+    scenario: "When a provider registers at `POST /registry/register`, `ledger.stake_bond()` locks ₹5.00 (`500 paise`) in `bond:<agent_id>`. Whenever a provider delivers bad work that fails verification, `ledger.slash_bond()` confiscates `100 paise` (`₹1.00`) from `bond:<agent_id>` into `platform:slashed`.",
+    files: ["gateway/ledger.py -> stake_bond(), slash_bond()", "gateway/orchestrator.py -> BOND_SLASHED"],
+    math: "`slash_amt = min(balance('bond:' + agent_id), 100)`. Shown live in the Dashboard's `Bond ₹` column and on the SSE tape.",
+    links: "Solves the Sybil/free-cheating threat identified in `docs/THREAT_MODEL.md` while keeping all double-entry ledger invariants balanced.",
+    judge: "In v2, we closed the Sybil free-cheating gap: providers post a ₹5.00 registration bond, and every failed verification verdict deterministically slashes ₹1.00 into the platform slashed pool."
+  },
+  {
+    id: "hash_chain",
+    name: "16. SHA-256 Tamper-Evident Audit Hash Chain",
+    cat: "SEC",
+    analogy: "A notary logbook where the bottom of Page N contains a cryptographic fingerprint of Page N-1 plus every word on Page N. If anyone erases a single digit on Page 3, every page from Page 3 to the end immediately turns red.",
+    scenario: "Every event (`TASK_CREATED`, `BID`, `CONTRACT`, `VERDICT`, `LEDGER_TXN`, `SETTLED`, `REFUNDED`) is appended via `audit.append()`. Clicking 'Tamper with an old record' on the dashboard edits one SQLite row, and `/audit/verify` immediately flags the exact `broken_at_seq` record.",
+    files: ["gateway/audit.py -> append(), verify_chain(), reconcile_ledger()"],
+    math: "$$\\text{hash}_n = \\text{SHA256}\\left(\\text{hash}_{n-1} \\;||\\; \\text{canonical\\_json}(\\text{ts}, \\text{task\\_id}, \\text{type}, \\text{payload})\\right)$$",
+    links: "`audit.reconcile_ledger()` cross-checks every `LEDGER_TXN` event in the verified hash chain against the SQLite `ledger` table to detect direct DB balance tampering.",
+    judge: "We didn't add a slow blockchain; we built a fast SHA-256 hash-chained audit log with an external head hash badge and live ledger-to-audit reconciliation."
+  }
+];
+
+let currentCat = "ALL";
+
+function filterTerms(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll(".f-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderTermList(0);
+}
+
+function renderTermList(activeIdx = 0) {
+  const filtered = currentCat === "ALL" ? TERMS : TERMS.filter(t => t.cat === currentCat);
+  const listEl = document.getElementById("term-list");
+  listEl.innerHTML = filtered.map((t, i) => `
+    <button class="term-btn ${i === activeIdx ? 'active' : ''}" onclick="selectTerm('${t.id}')">
+      <span><strong>${t.name}</strong></span>
+      <span class="cat-tag cat-${t.cat.toLowerCase()}">${t.cat}</span>
+    </button>
+  `).join("");
+  if (filtered.length > 0) {
+    renderTermDetail(filtered[activeIdx].id);
+  }
+}
+
+function selectTerm(id) {
+  const filtered = currentCat === "ALL" ? TERMS : TERMS.filter(t => t.cat === currentCat);
+  const idx = filtered.findIndex(t => t.id === id);
+  renderTermList(idx >= 0 ? idx : 0);
+}
+
+function renderTermDetail(id) {
+  const t = TERMS.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById("term-detail").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <h2 style="margin:0;font-size:19px;">${t.name}</h2>
+      <span class="cat-tag cat-${t.cat.toLowerCase()}">${t.cat}</span>
+    </div>
+
+    <div class="analogy-box">
+      <strong>Plain-English Analogy (How to Explain It Simply):</strong><br>
+      ${t.analogy}
+    </div>
+
+    <h3>How It Works Inside Our ShopSmart Scenario</h3>
+    <p>${t.scenario}</p>
+
+    <h3>Exact Code Location in <code>agentflow/</code></h3>
+    <div>${t.files.map(f => `<span class="code-pill">${f}</span>`).join("")}</div>
+
+    <h3>The Math &amp; Technical Logic</h3>
+    <div class="formula-box">${t.math}</div>
+
+    <h3>How It Links to Other Concepts in the Project</h3>
+    <p>${t.links}</p>
+
+    <div class="judge-box">
+      <strong>1-Sentence Judge Soundbite (Memorize This):</strong><br>
+      "${t.judge}"
+    </div>
+  `;
+}
+
+// =====================================================================
+// SANDBOX 1: LIVE SCORING CALCULATOR
+// =====================================================================
+function setScorePreset(mode) {
+  if (mode === 'cold') {
+    document.getElementById('qc-r').value = 0.50;
+    document.getElementById('cc-r').value = 0.50;
+  } else {
+    document.getElementById('qc-r').value = 0.40;
+    document.getElementById('cc-r').value = 0.60;
+  }
+  calcScoring();
+}
+
+function calcScoring() {
+  const [wr, wc, wt] = document.getElementById('sim-prio').value.split(',').map(Number);
+  const qcR = parseFloat(document.getElementById('qc-r').value);
+  const ccR = parseFloat(document.getElementById('cc-r').value);
+  document.getElementById('qc-r-val').textContent = qcR.toFixed(2);
+  document.getElementById('cc-r-val').textContent = ccR.toFixed(2);
+
+  const stageBudget = 1685; // ₹20 budget minus reserve for stages 2 & 3
+  const deadline = 8000;
+
+  // QuickClean: gross price 105p, eta 500ms
+  const qcC = 105 / stageBudget, qcT = 500 / deadline;
+  const qcS = wr * qcR - wc * qcC - wt * qcT;
+
+  // CleanCo: gross price 210p, eta 900ms
+  const ccC = 210 / stageBudget, ccT = 900 / deadline;
+  const ccS = wr * ccR - wc * ccC - wt * ccT;
+
+  const winner = ccS >= qcS ? "CleanCo (Honest Provider Wins!)" : "QuickClean (Cheap Fabricator Wins Cold Start -> Will Be Caught by Verifier!)";
+  const winClass = ccS >= qcS ? "good" : "amber";
+
+  document.getElementById('score-output').innerHTML = `
+    <table>
+      <thead><tr><th>Provider</th><th>Gross ₹</th><th>Verified R</th><th>Norm Cost (C)</th><th>Score (S)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>QuickClean</strong> (Cheater, claims 99%)</td>
+          <td>₹1.05</td>
+          <td>${qcR.toFixed(2)}</td>
+          <td>${qcC.toFixed(3)}</td>
+          <td><strong>${qcS.toFixed(4)}</strong></td>
+        </tr>
+        <tr>
+          <td><strong>CleanCo</strong> (Honest, claims 97%)</td>
+          <td>₹2.10</td>
+          <td>${ccR.toFixed(2)}</td>
+          <td>${ccC.toFixed(3)}</td>
+          <td><strong>${ccS.toFixed(4)}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px;"><strong>Winner Selected by Buyer:</strong> <span class="${winClass}">${winner}</span></p>
+  `;
+}
+
+// =====================================================================
+// SANDBOX 2: BAYESIAN REPUTATION SIMULATOR
+// =====================================================================
+let repState = { succ: 0.0, fail: 0.0, history: [] };
+function simRep(action) {
+  if (action === 'reset') {
+    repState = { succ: 0.0, fail: 0.0, history: [] };
+  } else {
+    repState.succ *= 0.92;
+    repState.fail *= 0.92;
+    if (action) repState.succ += 1.0;
+    else repState.fail += 1.0;
+    repState.history.push(action ? "PASS" : "FAIL");
+  }
+  const R = (repState.succ + 2.0) / (repState.succ + repState.fail + 4.0);
+  const ev = repState.succ + repState.fail;
+  document.getElementById('rep-output').innerHTML = `
+    <div class="formula-box">
+      succ = ${repState.succ.toFixed(3)} | fail = ${repState.fail.toFixed(3)} | evidence = ${ev.toFixed(2)}<br>
+      <strong>Verified Reliability R = (${repState.succ.toFixed(2)} + 2) / (${(repState.succ+repState.fail).toFixed(2)} + 4) = ${(R*100).toFixed(1)}% (${R.toFixed(3)})</strong>
+    </div>
+    <p><strong>Cold-Start Probation Status:</strong> ${ev < 1.0 ? '<span class="amber">ON PROBATION (evidence &lt; 1.0)</span>' : '<span class="good">GRADUATED (evidence &ge; 1.0)</span>'}</p>
+    <p><strong>Verdict Trail:</strong> ${repState.history.length ? repState.history.join(' &rarr; ') : 'None (Cold Start Prior = 50.0%)'}</p>
+  `;
+}
+
+// =====================================================================
+// SANDBOX 3: DOUBLE-ENTRY ESCROW & SLASHING SIMULATOR
+// =====================================================================
+let ledState = {};
+function simLedger(action) {
+  if (action === 'reset' || !ledState.init) {
+    ledState = {
+      init: true,
+      state: "NONE",
+      user: 2000,
+      escrow: 0,
+      provider: 0,
+      fees: 0,
+      bond: 500,
+      slashed: 0,
+      note: "Initial state: User has ₹20.00 (2000p), Provider staked ₹5.00 (500p) registration bond."
+    };
+  } else if (action === 'hold') {
+    if (ledState.state !== "NONE") {
+      ledState.note = "Contract already exists! Click Reset Ledger to start a new contract.";
+    } else {
+      ledState.state = "HELD";
+      ledState.user -= 210;
+      ledState.escrow += 210;
+      ledState.note = "HOLD: Moved 210p (200p price + 10p 5% fee) from user:demo -> escrow:c-101.";
+    }
+  } else if (action === 'release') {
+    if (ledState.state !== "HELD") {
+      ledState.note = "Blocked by Atomic State Guard! Contract must be in HELD state first (click Step 1).";
+    } else {
+      ledState.state = "RELEASED";
+      ledState.escrow -= 210;
+      ledState.provider += 200;
+      ledState.fees += 10;
+      ledState.note = "VERIFIER PASS -> RELEASED: 200p paid to agent:provider, 10p to platform:fees. Escrow is now 0.";
+    }
+  } else if (action === 'refund') {
+    if (ledState.state !== "HELD") {
+      ledState.note = "Blocked by Atomic State Guard! Contract must be in HELD state first (click Step 1).";
+    } else {
+      ledState.state = "REFUNDED";
+      ledState.escrow -= 210;
+      ledState.user += 210;
+      const s = Math.min(100, ledState.bond);
+      ledState.bond -= s;
+      ledState.slashed += s;
+      ledState.note = `VERIFIER FAIL -> REFUNDED + SLASHED: 210p returned to user:demo (₹0 lost!), and ${s}p slashed from bond:provider -> platform:slashed!`;
+    }
+  }
+  document.getElementById('ledger-output').innerHTML = `
+    <table>
+      <thead><tr><th>Ledger Account</th><th>Balance (Paise)</th><th>Balance (₹)</th></tr></thead>
+      <tbody>
+        <tr><td><code>user:demo</code></td><td>${ledState.user}p</td><td>₹${(ledState.user/100).toFixed(2)}</td></tr>
+        <tr><td><code>escrow:c-101</code> (State: <b>${ledState.state}</b>)</td><td>${ledState.escrow}p</td><td>₹${(ledState.escrow/100).toFixed(2)}</td></tr>
+        <tr><td><code>agent:provider</code></td><td>${ledState.provider}p</td><td>₹${(ledState.provider/100).toFixed(2)}</td></tr>
+        <tr><td><code>platform:fees</code></td><td>${ledState.fees}p</td><td>₹${(ledState.fees/100).toFixed(2)}</td></tr>
+        <tr><td><code>bond:provider</code></td><td>${ledState.bond}p</td><td>₹${(ledState.bond/100).toFixed(2)}</td></tr>
+        <tr><td><code>platform:slashed</code></td><td>${ledState.slashed}p</td><td>₹${(ledState.slashed/100).toFixed(2)}</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:8px;" class="teal"><strong>Action Result:</strong> ${ledState.note}</p>
+  `;
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+// Initialize everything on load
+renderTermList(0);
+calcScoring();
+simRep('reset');
+simLedger('reset');
+</script>
+</body>
+</html>

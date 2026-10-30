@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENTFLOW — Interactive Architecture & Scenario Map</title>
+<style>
+  :root {
+    --bg: #0b1118;
+    --panel: #121c27;
+    --panel-alt: #182635;
+    --ink: #e6edf3;
+    --mute: #8ba0b5;
+    --line: #25374a;
+    --teal: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #101924 0%, #0b1118 100%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  h1 { margin: 0; font-size: 22px; letter-spacing: 0.3px; }
+  .sub { color: var(--mute); font-size: 13px; margin-top: 4px; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .pill.teal { color: var(--teal); border-color: rgba(56,189,248,0.4); }
+  .pill.green { color: var(--green); border-color: rgba(52,211,153,0.4); }
+  .pill.amber { color: var(--amber); border-color: rgba(251,191,36,0.4); }
+  .container { max-width: 1380px; margin: 0 auto; padding: 20px 28px; }
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab {
+    padding: 9px 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--mute);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .tab.active {
+    background: var(--teal);
+    color: #06131f;
+    border-color: var(--teal);
+  }
+  .view { display: none; }
+  .view.active { display: block; }
+  .grid-2 { display: grid; grid-template-columns: 360px 1fr; gap: 18px; align-items: start; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  @media (max-width: 980px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 15px; color: var(--teal); }
+  .card h3 { margin: 12px 0 6px; font-size: 14px; color: var(--ink); }
+  .step-btn {
+    width: 100%;
+    text-align: left;
+    padding: 11px 13px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-alt);
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .step-btn:hover, .step-btn.active {
+    border-color: var(--teal);
+    background: rgba(56,189,248,0.12);
+  }
+  .step-num {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--line);
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 10px;
+  }
+  .step-btn.active .step-num { background: var(--teal); color: #06131f; }
+  .code-tag {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: rgba(255,255,255,0.06);
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: var(--amber);
+  }
+  pre {
+    background: #070c12;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #cfe0ee;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+  th { color: var(--mute); font-weight: 600; background: rgba(255,255,255,0.02); }
+  .good { color: var(--green); font-weight: 600; }
+  .bad { color: var(--red); font-weight: 600; }
+  .warn { color: var(--amber); font-weight: 600; }
+  .formula {
+    background: rgba(167,139,250,0.1);
+    border-left: 3px solid var(--purple);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    margin: 10px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>AGENTFLOW — System Architecture & Scenario Map</h1>
+    <div class="sub">Interactive Visual Guide Connecting Every File in <code>agentflow/</code> to the ShopSmart M2M Lifecycle</div>
+  </div>
+  <div class="pills">
+    <span class="pill teal">Ed25519 Signed M2M</span>
+    <span class="pill green">Double-Entry Escrow + Slashing</span>
+    <span class="pill amber">Neuro-Symbolic Policy Brain</span>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('scenario', this)">1. Interactive 9-Step Scenario Walkthrough</button>
+    <button class="tab" onclick="showTab('files', this)">2. Complete File-to-Concept Matrix</button>
+    <button class="tab" onclick="showTab('math', this)">3. Math, Risk Brain & Ledger State Machine</button>
+    <button class="tab" onclick="showTab('judges', this)">4. Wuselverse Comparison & Judge Defense</button>
+  </div>
+
+  <!-- TAB 1: SCENARIO WALKTHROUGH -->
+  <div id="scenario" class="view active">
+    <div class="grid-2">
+      <div class="card">
+        <h2>ShopSmart Live Lifecycle (Click Any Step)</h2>
+        <div id="step-list"></div>
+      </div>
+      <div class="card" id="step-detail"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2: FILE MATRIX -->
+  <div id="files" class="view">
+    <div class="card">
+      <h2>How Every File in <code>agentflow/</code> Connects to the Architecture</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>File Path</th>
+            <th>Core Concept / Role</th>
+            <th>Key Functions / Endpoints</th>
+            <th>Connected Files</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="code-tag">common/signing.py</span></td>
+            <td><strong>Zero-Trust Agent Identity & Replay Protection</strong></td>
+            <td><code>load_or_create_key()</code>, <code>sign_headers()</code>, <code>verify_headers()</code>, <code>NonceCache</code> (30s skew)</td>
+            <td>Used by <code>gateway/main.py</code>, <code>gateway/orchestrator.py</code>, <code>providers/provider_app.py</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/policy.py</span> <span class="good">(NEW v2)</span></td>
+            <td><strong>Dynamic Risk & Policy Brain</strong></td>
+            <td><code>derive_policy(goal, priority, budget)</code> &rarr; outputs <code>(w_r, w_c, w_t)</code>, <code>min_reliability</code>, <code>discount_target</code></td>
+            <td>Calls <code>common/gemini.py</code>; feeds <code>gateway/orchestrator.py</code> &amp; <code>gateway/scoring.py</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/orchestrator.py</span></td>
+            <td><strong>Autonomous Buyer Agent & Self-Healing Loop</strong></td>
+            <td><code>run_task()</code>, <code>_procure()</code>, <code>recover_orphans()</code></td>
+            <td>Coordinates <code>llm.py</code>, <code>policy.py</code>, <code>registry.py</code>, <code>scoring.py</code>, <code>verifier.py</code>, <code>ledger.py</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/scoring.py</span></td>
+            <td><strong>Trust-Adjusted Utility Scoring</strong></td>
+            <td><code>rank(bids, priority, cap_budget, deadline_ms, custom_weights)</code></td>
+            <td>Reads verified $R_i$ from <code>registry.py</code>; called by <code>orchestrator.py</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/verifier.py</span> <span class="good">(UPGRADED)</span></td>
+            <td><strong>Fail-Closed Deterministic Verifier</strong></td>
+            <td><code>verify()</code>, <code>_clean()</code>, <code>_sent()</code>, <code>_report()</code> + narrative number grounding + <code>id_text_binding</code></td>
+            <td>Uses ground truth from <code>common/domain.py</code>; signed by <code>VERIFIER_KEY</code> in <code>orchestrator.py</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/ledger.py</span> <span class="good">(UPGRADED)</span></td>
+            <td><strong>Double-Entry Integer-Paise Escrow & Bond Slashing</strong></td>
+            <td><code>transfer()</code>, <code>hold()</code>, <code>release()</code>, <code>refund()</code>, <code>stake_bond()</code>, <code>slash_bond()</code>, <code>invariants()</code></td>
+            <td>Writes atomically via <code>gateway/db.py</code> and logs to <code>gateway/audit.py</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/registry.py</span> <span class="good">(UPGRADED)</span></td>
+            <td><strong>Service Discovery, Beta(2,2) Reputation & Probation</strong></td>
+            <td><code>register()</code>, <code>discover()</code>, <code>reliability()</code>, <code>record()</code></td>
+            <td>Updated exclusively from independent <code>verifier.py</code> verdicts</td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">gateway/audit.py</span></td>
+            <td><strong>SHA-256 Tamper-Evident Hash Chain</strong></td>
+            <td><code>append()</code>, <code>verify_chain()</code>, <code>reconcile_ledger()</code></td>
+            <td>Streams live SSE via <code>gateway/main.py</code> to <code>dashboard/index.html</code></td>
+          </tr>
+          <tr>
+            <td><span class="code-tag">providers/profiles.py</span> &amp; <span class="code-tag">provider_app.py</span></td>
+            <td><strong>8 Independent Microservice Provider Agents</strong></td>
+            <td><code>/rfq</code>, <code>/counter</code>, <code>/accept</code>, <code>/execute</code>, <code>/admin/mode</code></td>
+            <td>Each runs on ports <code>:9101</code>–<code>:9108</code> with its own Ed25519 keypair</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: MATH & LEDGER -->
+  <div id="math" class="view">
+    <div class="grid-3">
+      <div class="card">
+        <h2>1. Trust-Adjusted Utility Scoring (<code>scoring.py</code>)</h2>
+        <p>After hard constraints filter out over-budget, slow, or below-floor bids, eligible bids are ranked by:</p>
+        <div class="formula">S_i = w_R * R_i - w_C * (Price_i / StageBudget) - w_T * (ETA_i / Deadline)</div>
+        <ul>
+          <li><strong>Why normalize by <code>StageBudget</code> instead of min-max across bids?</strong> Min-max turns a tiny 5-paise price difference into a full 1.0 penalty, which would let a cheap fabricator beat an honest provider.</li>
+          <li><strong>Where does $R_i$ come from?</strong> Never from the provider's self-reported <code>claimed_reliability</code> (e.g., QuickClean claims 99%). It comes strictly from <code>registry.reliability()</code>.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>2. Bayesian Reputation with Decay (<code>registry.py</code>)</h2>
+        <p>Every provider capability starts with a neutral $\text{Beta}(2, 2)$ prior ($R_0 = 0.500$). On every verifier verdict:</p>
+        <div class="formula">
+          succ = 0.92 * succ + (1 if PASS else 0)<br>
+          fail = 0.92 * fail + (1 if FAIL else 0)<br>
+          R = (succ + 2.0) / (succ + fail + 4.0)
+        </div>
+        <ul>
+          <li><strong>Cold-Start Run 1:</strong> QuickClean ($1.00, $R=0.50$) beats CleanCo ($2.00, $R=0.50$) on price, cheats, fails verification, gets ₹0, and drops to $R = 2.0 / 5.0 = 0.400$.</li>
+          <li><strong>Learned Run 2:</strong> CleanCo ($R = 3.0 / 5.0 = 0.600$) immediately outscores QuickClean ($0.400$).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>3. Double-Entry Escrow & Slashing (<code>ledger.py</code>)</h2>
+        <p>Every credit movement is integer paise inside an atomic SQLite <code>BEGIN IMMEDIATE</code> transaction:</p>
+        <div class="formula">
+          HOLD: user:demo &rarr; escrow:c-123 (Price + 5% Fee)<br>
+          PASS: escrow:c-123 &rarr; agent:provider (Price) + platform:fees (Fee)<br>
+          FAIL: escrow:c-123 &rarr; user:demo (100% Refund)<br>
+          SLASH: bond:provider &rarr; platform:slashed (100 paise penalty)
+        </div>
+        <p><strong>Invariants Checked Live (<code>/ledger/verify</code>):</strong> Total Debits == Total Credits, no negative accounts (except <code>system:mint</code>), zero orphaned escrow on closed contracts, and 1-to-1 reconciliation with the SHA-256 audit log.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: JUDGE Q&A -->
+  <div id="judges" class="view">
+    <div class="card">
+      <h2>Why AGENTFLOW Beats Wuselverse & Typical GitHub Agent Marketplaces</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Wuselverse / Typical Repos</th>
+            <th>AGENTFLOW (Your Build)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Negotiation</strong></td>
+            <td class="bad">Platform submits static auto-bids on behalf of idle agents.</td>
+            <td class="good">Live 2-round M2M counter-offer loop using rival net bids as leverage against provider private margin floors (<code>/counter</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>Verification</strong></td>
+            <td class="bad">Assumes <code>HTTP 200 OK</code> means valid work.</td>
+            <td class="good">Independent <code>verifier.py</code> recomputes ground-truth invariants from task input + checks every number in Gemini prose (<code>narrative_numbers_grounded</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>Key Custody</strong></td>
+            <td class="bad">Central platform stores developers' encrypted Anthropic API keys.</td>
+            <td class="good">Zero-trust microservice isolation: each provider holds its own Ed25519 keypair and LLM key; all requests &amp; responses are signed.</td>
+          </tr>
+          <tr>
+            <td><strong>Failure Recovery</strong></td>
+            <td class="bad">Single-task dispatch; pipeline breaks on bad output.</td>
+            <td class="good">Autonomous mid-stage escrow refund, provider bond slashing, reputation downgrade, and instant re-bidding within remaining stage budget.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS = [
+  {
+    title: "Step 1: Customer Submits Goal & Budget",
+    badge: "POST /tasks",
+    files: ["dashboard/index.html", "gateway/main.py", "gateway/db.py"],
+    summary: "ShopSmart submits 'Analyze customer reviews and produce a report' with a ₹20 (2000 paise) budget and an Idempotency-Key header.",
+    what_happens: [
+      "gateway/main.py validates the API key, checks the Idempotency-Key in SQLite (so retries never double-spend), and caps concurrent tasks.",
+      "Generates or loads 150-500 rating-labelled reviews via common/domain.py.",
+      "Emits #1 TASK_CREATED into the SHA-256 hash chain (gateway/audit.py) and spawns orchestrator.run_task(tid)."
+    ],
+    code: `POST /tasks (Headers: x-api-key, idempotency-key)\n-> INSERT INTO tasks(..., budget=2000, priority='auto', mode='agentflow')\n-> audit.append(tid, "TASK_CREATED", ...)`
+  },
+  {
+    title: "Step 2: Buyer Brain Plans & Synthesizes Risk Policy",
+    badge: "PLAN + POLICY",
+    files: ["gateway/llm.py", "gateway/policy.py", "common/gemini.py"],
+    summary: "The Buyer Agent decomposes the goal into a 3-stage DAG (clean_data -> sentiment -> report) and synthesizes dynamic risk weights.",
+    what_happens: [
+      "gateway/llm.py calls Gemini (with instant deterministic fallback) to map the goal onto the ['clean_data', 'sentiment', 'report'] pipeline.",
+      "gateway/policy.py (NEW v2) evaluates semantic risk tolerance and outputs (w_R, w_C, w_T), min_reliability floor, and discount_target.",
+      "orchestrator.py checks that the sum of minimum provider price hints + 5% fee fits inside the ₹20 budget before spending a single paisa (reserving budget for later stages)."
+    ],
+    code: `plan = await llm.interpret_goal(goal)  # -> ['clean_data', 'sentiment', 'report']\npol  = await policy.derive_policy(goal, prio, budget)\nreserve = sum(gross(hints[x]) for x in pipeline[i+1:])\ncap_budget = remaining - reserve`
+  },
+  {
+    title: "Step 3: Capability Discovery & Ed25519 Signed RFQs",
+    badge: "POST /rfq",
+    files: ["gateway/registry.py", "common/signing.py", "providers/provider_app.py"],
+    summary: "Buyer discovers active providers for the current stage and sends parallel Ed25519-signed Request for Quotes (RFQs).",
+    what_happens: [
+      "registry.discover(cap) returns healthy providers along with their Claimed Reliability, Verified Reliability (Beta prior), and Bond Stake.",
+      "orchestrator.py signs each POST /rfq request with BUYER_KEY (headers: X-Agent-Id, X-Timestamp, X-Nonce, X-Signature).",
+      "Each provider process (:9101-:9108) verifies the Buyer's signature + nonce cache and returns a signed quote."
+    ],
+    code: `headers = signing.sign_headers(BUYER_KEY, "buyer-agent-1", "POST", "/rfq", body)\nresp = await c.post(provider["endpoint"] + "/rfq", content=body, headers=headers)\nsigning.verify_headers(provider_pubkey, resp.headers, "RESPONSE", "/rfq", resp.content)`
+  },
+  {
+    title: "Step 4: Hard Constraints & Trust-Weighted Scoring",
+    badge: "BID_SCORED",
+    files: ["gateway/orchestrator.py", "gateway/scoring.py"],
+    summary: "Buyer filters out ineligible bids deterministically, then scores remaining bids using S = w_R*R - w_C*C - w_T*T.",
+    what_happens: [
+      "Hard gates reject any bid where gross(price) > cap_budget, eta_ms > deadline, or verified R < min_reliability_floor.",
+      "scoring.rank() computes S_i using verified R_i (ignoring the provider's 99% marketing claim).",
+      "On Cold Start (Run 1), all providers start at R=0.500, so cheap fabricator QuickClean (100p) outscores honest CleanCo (200p)."
+    ],
+    code: `C = min(1.0, gross_price / cap_budget)\nT = min(1.0, eta_ms / deadline_ms)\nS = w_r * verified_R - w_c * C - w_t * T`
+  },
+  {
+    title: "Step 5: Bounded 2-Round M2M Negotiation",
+    badge: "POST /counter",
+    files: ["gateway/orchestrator.py", "providers/provider_app.py", "providers/profiles.py"],
+    summary: "Buyer uses rival bids as leverage to negotiate the winning provider's price down over at most 2 rounds.",
+    what_happens: [
+      "orchestrator.py calculates the best competing net price (or asks for 15-20% off if no cheaper rival exists).",
+      "Sends signed POST /counter to the winning provider.",
+      "In provider_app.py, if offer >= P['min_price'], the provider accepts immediately; otherwise it concedes halfway down toward its private floor."
+    ],
+    code: `rivals = [r["price"] - fee_of_gross(r["price"]) for r in ranked[1:]]\ntarget = min(rivals) if rivals and min(rivals) < price else int(price * (1.0 - disc))\nresp = await _call(c, winning_provider, "/counter", {"rfq_id": rfq_id, "price": target})`
+  },
+  {
+    title: "Step 6: Dual-Signed Contract & Atomic Escrow Hold",
+    badge: "POST /accept + HOLD",
+    files: ["gateway/orchestrator.py", "gateway/ledger.py", "gateway/db.py"],
+    summary: "Both agents cryptographically sign canonical contract terms and the ledger locks Price + 5% Fee in escrow.",
+    what_happens: [
+      "Buyer creates canonical JSON terms (contract_id, capability, price, fee, deadline_ms, acceptance='verifier_pass').",
+      "Provider verifies price >= min_price and returns its Ed25519 signature over the exact terms bytes.",
+      "Inside one atomic SQLite transaction (with db.tx()), AGENTFLOW stores both signatures and moves gross(price) from user:demo to escrow:c-xxx."
+    ],
+    code: `assert signing.verify_blob(provider_pub, acc["provider_sig"], terms_bytes)\nwith db.tx():\n    db.x("INSERT INTO contracts(..., state='HELD', buyer_sig=?, provider_sig=?)...")\n    ledger.hold(cid, user, price, task_id)`
+  },
+  {
+    title: "Step 7: Untrusted Execution & Fail-Closed Verification",
+    badge: "POST /execute + VERDICT",
+    files: ["providers/provider_app.py", "gateway/verifier.py"],
+    summary: "Provider executes the work; independent Verifier checks schema, completeness, recounts, and LLM prose grounding.",
+    what_happens: [
+      "On Run 1, cheap winner QuickClean runs in 'fabricate' mode — padding fake 5-star reviews and skipping deduplication.",
+      "gateway/verifier.py inspects the output against input ground truth: catches 'no_fabricated_ids' and 'completeness' failures.",
+      "Verifier signs the FAIL verdict with VERIFIER_KEY and emits VERDICT (passed=False) to the audit chain."
+    ],
+    code: `v = verifier.verify(cap, stage_input, out)\n# QuickClean fails: no_fabricated_ids (50 unknown ids), completeness\nvsig = signing.sign_blob(VERIFIER_KEY, json.dumps({"c": cid, "passed": v["passed"], ...}))`
+  },
+  {
+    title: "Step 8: Autonomous Recovery — Escrow Refund, Bond Slash & Re-Bid",
+    badge: "REFUND + SLASH + RETRY",
+    files: ["gateway/ledger.py", "gateway/registry.py", "gateway/orchestrator.py"],
+    summary: "User loses ₹0: escrow is refunded, cheating provider's bond is slashed, reputation drops, and Buyer hires CleanCo.",
+    what_happens: [
+      "ledger.refund() atomically transitions contract HELD -> REFUNDED and returns 100% of gross(price) to user:demo.",
+      "ledger.slash_bond() slashes 100 paise from bond:provider-quickclean -> platform:slashed.",
+      "registry.record(agent_id, cap, False) drops QuickClean's verified reliability from 50% to 40%.",
+      "orchestrator.py adds QuickClean to excluded set and immediately loops to Attempt 2 — hiring honest CleanCo, which passes verification and settles!"
+    ],
+    code: `ledger.refund(cid, user, price, task_id)\nledger.slash_bond(cid, wp["agent_id"], task_id=task_id)\nregistry.record(wp["agent_id"], cap, False)\nexcluded.add(wp["agent_id"])  # Next attempt hires CleanCo -> PASS -> ledger.release()`
+  },
+  {
+    title: "Step 9: Final Report Assembly, Learning & Audit Reconciliation",
+    badge: "TASK_COMPLETED",
+    files: ["gateway/audit.py", "gateway/ledger.py", "dashboard/index.html"],
+    summary: "All 3 stages settle cleanly; Run 2 skips every cheater automatically in half the time.",
+    what_happens: [
+      "Final verified report (sentiment breakdown, ranked top complaints, 5 distinct recommendations, and grounded Gemini narrative) is saved.",
+      "/ledger/verify confirms Debits == Credits and 0 stuck escrow; /audit/verify confirms the SHA-256 event chain is unbroken.",
+      "When you click Run Task a second time on the dashboard, the Buyer Agent remembers the verified reliability scores and hires honest providers on Attempt 1 with 0 bad deliveries!"
+    ],
+    code: `GET /ledger/verify -> {"invariants": {"balanced": true, "ok": true}, "reconcile_with_audit": {"ok": true}}\nGET /audit/verify  -> {"ok": true, "checked": 48, "head": "a94f..."}`
+  }
+];
+
+function renderSteps(activeIdx = 0) {
+  const list = document.getElementById("step-list");
+  list.innerHTML = STEPS.map((s, i) => `
+    <button class="step-btn ${i === activeIdx ? 'active' : ''}" onclick="renderSteps(${i})">
+      <span><span class="step-num">${i + 1}</span>${s.title.replace(/^Step \d+:\s*/, '')}</span>
+      <span class="code-tag">${s.badge}</span>
+    </button>
+  `).join("");
+
+  const s = STEPS[activeIdx];
+  document.getElementById("step-detail").innerHTML = `
+    <h2>${s.title}</h2>
+    <p style="color:var(--mute);margin-top:0">${s.summary}</p>
+    <div style="margin:10px 0">
+      <strong>Files Active in This Step:</strong>
+      ${s.files.map(f => `<span class="code-tag" style="margin-right:6px">${f}</span>`).join("")}
+    </div>
+    <h3>What Happens Under the Hood</h3>
+    <ul>
+      ${s.what_happens.map(w => `<li style="margin-bottom:6px">${w}</li>`).join("")}
+    </ul>
+    <h3>Code Execution Trace</h3>
+    <pre>${s.code}</pre>
+  `;
+}
+
+function showTab(id, btn) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+renderSteps(0);
+</script>
+</body>
+</html>

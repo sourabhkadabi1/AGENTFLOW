@@ -1,0 +1,14 @@
+# Hard questions and honest answers
+
+1. **Isn't this just a scripted demo?** The cheats are ours, but the system is real: 8 processes, signed calls, an escrow state machine, a verifier that recomputes facts from the input. Show the 27 tests and run it live; the failures are detected, not hard-coded (swap any provider's mode from the dashboard).
+2. **Where is the AI?** Honest answer: the economic layer is deliberately deterministic because money must be. LLMs belong where judgment is open-ended: interpreting goals and doing provider work. Gemini does goal interpretation and powers the optional GemReport provider; the verifier fact-checks every number in its prose. Only say this after running it with a real key.
+3. **What stops a cheat from re-registering under a new ID?** Today: nothing but a registration token; a new ID restarts at neutral reputation. That is the Sybil/cold-start problem. Mitigation on the roadmap: bond + probation (slash a stake on a fraud verdict, cap job size for new agents). Don't claim it's solved unless you built it.
+4. **Who verifies the verifier?** It is deterministic code with no LLM, ground truth from the task input, fail-closed, signs its verdicts. It can be wrong: false accepts and false rejects are both tested. A real deployment would use multiple independent verifiers.
+5. **Can the audit log be forged?** The operator can rewrite the entire chain. It detects tampering by anyone who holds an earlier head hash; publish the head to make it meaningful. Not a blockchain, on purpose.
+6. **Why not x402 / AP2 / Stripe?** Those are payment rails; this is the coordination, trust and settlement logic that decides when to pay. The ledger interface is where a real rail plugs in. (Verify your deck's competitor table against current docs before presenting.)
+7. **What happens if the buyer crashes mid-contract?** On restart `recover_orphans` refunds every HELD escrow and fails the task (unit-tested).
+8. **Double payment?** Every transfer carries a unique idempotency key; release/refund are guarded by an atomic HELD→terminal state change (unit-tested, including a forced mid-release failure that rolls back).
+9. **Does trust-weighting actually beat cheapest+verification?** On money, no: both pay ₹0 for bad work. On time and wasted calls, yes: bad deliveries drop from 3/task to 0/task after learning and runtime halves, at about ₹0.34 more per task (docs/BENCHMARK.md). Say exactly that.
+10. **Does it scale?** No claim. SQLite with a global lock; fine for a demo, not for thousands of concurrent tasks.
+11. **Why 5% fee?** Illustrative platform revenue; it is charged on top of the quote and refunded on failure.
+12. **Is the dataset real?** Synthetic unless you ran `load_reviews.py`. If you use real data, calibrate `SENT_AGREEMENT_MIN` first and say which dataset.
