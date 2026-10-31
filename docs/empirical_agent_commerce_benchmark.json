@@ -1,0 +1,255 @@
+{
+  "summary": {
+    "AGENTFLOW": {
+      "completion_rate_pct": 100.0,
+      "incorrect_output_accepted_and_paid_pct": 0.0,
+      "unverified_payments_count": 0,
+      "recovery_after_failure_pct": 40.0,
+      "avg_spent_inr": 8.8,
+      "avg_wasted_inr": 0.0,
+      "avg_latency_ms": 3473
+    },
+    "ERC-8183 (Native)": {
+      "completion_rate_pct": 0.0,
+      "incorrect_output_accepted_and_paid_pct": 0.0,
+      "unverified_payments_count": 0,
+      "recovery_after_failure_pct": 0.0,
+      "avg_spent_inr": 0.0,
+      "avg_wasted_inr": 0.0,
+      "avg_latency_ms": 4
+    },
+    "ERC-8183 (+ Client Retry Adapter)": {
+      "completion_rate_pct": 100.0,
+      "incorrect_output_accepted_and_paid_pct": 0.0,
+      "unverified_payments_count": 0,
+      "recovery_after_failure_pct": 100.0,
+      "avg_spent_inr": 10.0,
+      "avg_wasted_inr": 0.0,
+      "avg_latency_ms": 12
+    },
+    "Pay-Per-Request (Nevermined/x402)": {
+      "completion_rate_pct": 0.0,
+      "incorrect_output_accepted_and_paid_pct": 100.0,
+      "unverified_payments_count": 15,
+      "recovery_after_failure_pct": 0.0,
+      "avg_spent_inr": 4.0,
+      "avg_wasted_inr": 4.0,
+      "avg_latency_ms": 5
+    }
+  },
+  "replay_results": {
+    "agentflow_idempotency_verified": true,
+    "erc8183_nonce_jobid_replay_protection": true,
+    "x402_idempotency": false
+  },
+  "raw_runs": {
+    "AGENTFLOW": [
+      {
+        "task_id": "t-bfbc6cc3",
+        "success": true,
+        "spent": 914,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "refunds": 3,
+        "saved_negotiation": 90,
+        "latency_ms": 4462,
+        "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
+      },
+      {
+        "task_id": "t-6f0b7bca",
+        "success": true,
+        "spent": 872,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "refunds": 1,
+        "saved_negotiation": 20,
+        "latency_ms": 3721,
+        "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
+      },
+      {
+        "task_id": "t-69e00412",
+        "success": true,
+        "spent": 872,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "refunds": 0,
+        "saved_negotiation": 0,
+        "latency_ms": 3053,
+        "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
+      },
+      {
+        "task_id": "t-b366f13c",
+        "success": true,
+        "spent": 872,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "refunds": 0,
+        "saved_negotiation": 0,
+        "latency_ms": 3026,
+        "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
+      },
+      {
+        "task_id": "t-a374e1f3",
+        "success": true,
+        "spent": 872,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "refunds": 0,
+        "saved_negotiation": 0,
+        "latency_ms": 3104,
+        "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
+      }
+    ],
+    "ERC-8183 (Native)": [
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "latency_ms": 4,
+        "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "latency_ms": 4,
+        "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "latency_ms": 4,
+        "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "latency_ms": 4,
+        "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "latency_ms": 4,
+        "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
+      }
+    ],
+    "ERC-8183 (+ Client Retry Adapter)": [
+      {
+        "success": true,
+        "spent": 1000,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "recovery_attempts": 3,
+        "latency_ms": 11,
+        "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
+      },
+      {
+        "success": true,
+        "spent": 1000,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "recovery_attempts": 3,
+        "latency_ms": 13,
+        "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
+      },
+      {
+        "success": true,
+        "spent": 1000,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "recovery_attempts": 3,
+        "latency_ms": 12,
+        "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
+      },
+      {
+        "success": true,
+        "spent": 1000,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "recovery_attempts": 3,
+        "latency_ms": 13,
+        "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
+      },
+      {
+        "success": true,
+        "spent": 1000,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": true,
+        "recovery_attempts": 3,
+        "latency_ms": 13,
+        "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
+      }
+    ],
+    "Pay-Per-Request (Nevermined/x402)": [
+      {
+        "success": false,
+        "spent": 400,
+        "wasted_paid": 400,
+        "unverified_payments": 3,
+        "recovered": false,
+        "latency_ms": 5,
+        "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
+      },
+      {
+        "success": false,
+        "spent": 400,
+        "wasted_paid": 400,
+        "unverified_payments": 3,
+        "recovered": false,
+        "latency_ms": 5,
+        "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
+      },
+      {
+        "success": false,
+        "spent": 400,
+        "wasted_paid": 400,
+        "unverified_payments": 3,
+        "recovered": false,
+        "latency_ms": 6,
+        "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
+      },
+      {
+        "success": false,
+        "spent": 400,
+        "wasted_paid": 400,
+        "unverified_payments": 3,
+        "recovered": false,
+        "latency_ms": 5,
+        "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
+      },
+      {
+        "success": false,
+        "spent": 400,
+        "wasted_paid": 400,
+        "unverified_payments": 3,
+        "recovered": false,
+        "latency_ms": 5,
+        "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
+      }
+    ]
+  }
+}
