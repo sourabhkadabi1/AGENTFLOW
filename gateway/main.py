@@ -2,7 +2,7 @@
 import asyncio, json, os, time, uuid
 from pathlib import Path
 import httpx
-from fastapi import FastAPI, Request, HTTPException, Header
+from fastapi import FastAPI, Request, HTTPException, Header, Response
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field
 from common import signing
@@ -176,6 +176,19 @@ async def reset(x_admin_token: str = Header(None)):
 
 @app.get("/", response_class=HTMLResponse)
 def index(): return (Path(__file__).parent.parent / "dashboard" / "index.html").read_text(encoding="utf-8")
+
+@app.get("/bi", response_class=HTMLResponse)
+def bi_dashboard():
+    p = Path(__file__).parent.parent / "dashboard" / "bi" / "index.html"
+    return p.read_text(encoding="utf-8") if p.exists() else "BI Dashboard not found"
+
+@app.get("/bi/{filename}")
+def bi_static(filename: str):
+    p = Path(__file__).parent.parent / "dashboard" / "bi" / filename
+    if not p.exists(): raise HTTPException(404, "not found")
+    media = "application/javascript" if filename.endswith(".js") else "text/css" if filename.endswith(".css") else "text/plain"
+    return Response(p.read_text(encoding="utf-8"), media_type=media)
+
 
 @app.get("/benchmark")
 def benchmark():
