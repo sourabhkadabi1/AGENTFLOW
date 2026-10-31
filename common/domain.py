@@ -1,7 +1,7 @@
 """Shared constants, dataset generator and reference lexicons. The verifier's checks use rating ground truth, not the providers' lexicon."""
 import random, re, math
 
-CAPABILITIES = ["clean_data", "sentiment", "report"]
+CAPABILITIES = ["clean_data", "sentiment", "report", "parse_code", "find_bugs", "audit_report"]
 FEE_BPS = 500  # 5% platform fee charged on top of the quoted price
 
 def gross(price: int) -> int:  # paise incl. fee, rounded up
@@ -64,3 +64,51 @@ def theme_hits(text: str) -> list:
     t = norm(text); return [k for k, ws in THEMES.items() if any(w in t for w in ws)]
 
 def stars_to_label(s: int) -> str: return "positive" if s >= 4 else ("negative" if s <= 2 else "neutral")
+
+# ---- Code audit domain ----
+BUG_CATEGORIES = {
+    "sql_injection": ["execute(", "f\"SELECT", "f'SELECT"],
+    "xss": ["innerHTML", "document.write("],
+    "hardcoded_secret": ["password=", "password =", "api_key", "secret=", "secret =", "token =", "token=", "aws_secret"],
+    "insecure_random": ["random.random()", "random.randint("],
+    "missing_auth": ["# todo: add auth", "# no auth"],
+    "race_condition": ["global ", "# not thread safe"],
+}
+
+def detect_bugs(code: str) -> list[dict]:
+    """Deterministic static analysis scanner that finds vulnerabilities in code."""
+    lines = code.split("\n")
+    found = []
+    for cat, patterns in BUG_CATEGORIES.items():
+        cnt = sum(1 for line in lines if any(pat.lower() in line.lower() for pat in patterns))
+        if cnt > 0:
+            sev = "high" if cat in ("sql_injection", "xss", "hardcoded_secret") else "medium"
+            found.append({"category": cat, "count": cnt, "severity": sev})
+    return found
+
+_CODE_TEMPLATES = [
+    {"file": "auth.py", "code": 'def login(user, pw):\n    cursor.execute(f"SELECT * FROM users WHERE name=\'{user}\'")\n    return cursor.fetchone()'},
+    {"file": "api.py", "code": 'API_KEY = "sk-hardcoded-12345"\ndef get_data():\n    # no auth\n    return db.query("SELECT *")'},
+    {"file": "render.js", "code": 'function show(data) {\n    document.getElementById("out").innerHTML = data.user_input;\n}'},
+    {"file": "utils.py", "code": 'import random\ndef gen_token():\n    return str(random.random())'},
+    {"file": "worker.py", "code": 'count = 0\ndef inc():\n    global count\n    # not thread safe\n    count += 1'},
+    {"file": "payment.py", "code": 'def charge(amount):\n    password="admin123"\n    api_key="pk_live_abc"\n    return process(amount)'},
+    {"file": "search.py", "code": 'def find(q):\n    cursor.execute(f"SELECT * FROM items WHERE name LIKE \'%{q}%\'")\n    return cursor.fetchall()'},
+    {"file": "dashboard.js", "code": 'function render(html) {\n    document.write(html);\n    el.innerHTML = getUserInput();\n}'},
+    {"file": "config.py", "code": 'AWS_SECRET = "wJalrXUtnFEMI"\ntoken = "ghp_xxxxxxxxxxxx"\ndef connect(): pass'},
+    {"file": "scheduler.py", "code": 'import random, time\ndef jitter():\n    time.sleep(random.random())\n    # TODO: add auth\n    return run_job()'},
+    {"file": "clean.py", "code": 'def sanitize(text):\n    return text.strip().lower()  # safe helper'},
+    {"file": "logger.py", "code": 'import logging\ndef setup():\n    logging.basicConfig(level="INFO")\n    return logging.getLogger(__name__)'},
+]
+
+def generate_code_snippets(n=12, seed=42):
+    """Synthetic code snippets with KNOWN bugs for deterministic verification.
+    Each snippet has ground-truth bug annotations the verifier checks against."""
+    r = random.Random(seed)
+    out = []
+    templates = list(_CODE_TEMPLATES)
+    r.shuffle(templates)
+    for i, t in enumerate(templates[:n]):
+        bugs_dict = {b["category"]: b["count"] for b in detect_bugs(t["code"])}
+        out.append({"id": f"f{i:03d}", "file": t["file"], "code": t["code"], "ground_truth_bugs": bugs_dict})
+    return out

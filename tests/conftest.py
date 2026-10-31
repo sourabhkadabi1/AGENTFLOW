@@ -2,7 +2,8 @@ import os, shutil, socket, subprocess, sys, time, signal, tempfile, httpx, pytes
 ROOT = os.path.dirname(os.path.dirname(__file__)); BASE = "http://127.0.0.1:8000"
 H = {"x-api-key": "dev-user-key"}; ADMIN = {"x-admin-token": "dev-admin-token"}
 _WIN = os.name == "nt"
-PROFILES = ["cleanco", "quickclean", "sentipro", "bargainsent", "slowsent", "reportwriter", "cheapreport"]
+PROFILES = ["cleanco", "quickclean", "sentipro", "bargainsent", "slowsent", "reportwriter", "cheapreport",
+            "codeparser", "fastparse", "bugfinder", "cheapscanner", "auditwriter"]
 
 def _find_bash():
     """Locate bash: PATH first, then common Git-for-Windows locations."""
@@ -54,7 +55,7 @@ def _kill_procs(procs):
 
 @pytest.fixture(scope="session")
 def stack(tmp_path_factory):
-    stale = [p for p in [8000] + list(range(9101, 9109)) if _busy(p)]
+    stale = [p for p in [8000] + list(range(9101, 9109)) + list(range(9201, 9206)) if _busy(p)]
     if stale: pytest.fail(f"ports in use {stale}: stale AgentFlow processes. Run ./scripts/stop_all.sh and retry.", pytrace=False)
     d = tmp_path_factory.mktemp("af")
     env = {**os.environ, "AGENTFLOW_DB": str(d / "t.db"), "AGENTFLOW_KEYS": str(d / "keys"),
@@ -70,10 +71,10 @@ def stack(tmp_path_factory):
         for _ in range(60):
             try:
                 a = httpx.get(BASE + "/registry/agents", timeout=1).json()
-                if sum(1 for x in a if x["role"] == "provider" and x["healthy"]) == 8: break
+                if sum(1 for x in a if x["role"] == "provider" and x["healthy"]) >= 12: break
             except Exception: pass
             time.sleep(0.5)
-        else: pytest.fail("stack did not come up with 8 healthy providers (7 + optional LLM provider)")
+        else: pytest.fail("stack did not come up with 12+ healthy providers")
         yield BASE
     finally:
         if _WIN:
@@ -82,7 +83,7 @@ def stack(tmp_path_factory):
             try: os.killpg(os.getpgid(procs[0].pid), signal.SIGTERM)
             except (ProcessLookupError, OSError): pass
         for _ in range(20):
-            if not any(_busy(x) for x in [8000] + list(range(9101, 9109))): break
+            if not any(_busy(x) for x in [8000] + list(range(9101, 9109)) + list(range(9201, 9206))): break
             time.sleep(0.25)
         else:
             if _WIN:
@@ -106,3 +107,14 @@ def set_mode(provider, mode): assert httpx.post(BASE + "/demo/inject", json={"pr
 def bal(a): return httpx.get(BASE + "/ledger/balances").json().get(a, 0)
 def events(tid): return httpx.get(f"{BASE}/audit?task_id={tid}").json()
 def verify(): return httpx.get(BASE + "/ledger/verify").json(), httpx.get(BASE + "/audit/verify").json()
+
+def run_code_audit(budget=25, mode="agentflow", priority="balanced", key=None, timeout=60):
+    hdr = dict(H)
+    if key: hdr["idempotency-key"] = key
+    tid = httpx.post(BASE + "/tasks", json={"goal": "Security code audit and vulnerability scan", "budget_inr": budget, "priority": priority, "mode": mode, "n_reviews": 50}, headers=hdr).json()["task_id"]
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        t = httpx.get(f"{BASE}/tasks/{tid}").json()
+        if t["status"] in ("COMPLETED", "FAILED"): return t
+        time.sleep(0.5)
+    pytest.fail("task timeout")

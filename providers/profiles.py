@@ -9,5 +9,11 @@ PROFILES = {
     "reportwriter":dict(name="ReportWriter",capability="report",    base_price=300, min_price=250, eta_ms=1200, claimed=0.95, default_mode="honest",    port=9106),
     "gemreport": dict(name="GemReport",    capability="report",     base_price=400, min_price=350, eta_ms=2500, claimed=0.95, default_mode="honest",    port=9108, llm=True),   # optional: WITH_LLM=1
     "cheapreport":dict(name="CheapReport", capability="report",     base_price=100, min_price=90,  eta_ms=600,  claimed=0.99, default_mode="fabricate", port=9107),
+    # ---- code audit pipeline providers ----
+    "codeparser":  dict(name="CodeParser",    capability="parse_code",    base_price=150, min_price=120, eta_ms=700,  claimed=0.95, default_mode="honest",    port=9201),
+    "fastparse":   dict(name="FastParse",     capability="parse_code",    base_price=80,  min_price=60,  eta_ms=300,  claimed=0.99, default_mode="fabricate", port=9202),
+    "bugfinder":   dict(name="BugFinder",     capability="find_bugs",     base_price=400, min_price=340, eta_ms=1200, claimed=0.94, default_mode="honest",    port=9203),
+    "cheapscanner":dict(name="CheapScanner",  capability="find_bugs",     base_price=120, min_price=100, eta_ms=500,  claimed=0.98, default_mode="random",    port=9204),
+    "auditwriter": dict(name="AuditWriter",   capability="audit_report",  base_price=350, min_price=280, eta_ms=1100, claimed=0.93, default_mode="honest",    port=9205),
 }
 MODES = ["honest", "fabricate", "random", "timeout", "garbage", "hallucinate", "lazy_echo", "subtle_drift"]   # hallucinate: correct numbers + an invented statistic in the LLM narrative

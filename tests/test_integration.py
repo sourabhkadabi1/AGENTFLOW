@@ -6,7 +6,7 @@ P = "http://127.0.0.1"
 def test_01_all_agents_registered_with_distinct_keys(stack):
     a = {x["id"]: x for x in httpx.get(BASE + "/registry/agents").json()}
     keys = {httpx.get(f"{BASE}/registry/agents/{i}").json()["pubkey"] for i in a}
-    assert len(keys) == len(a) == 10
+    assert len(keys) == len(a) == 15
 
 def test_02_unsigned_forged_replayed_and_unknown_callers_rejected(stack):
     from common import signing
@@ -39,6 +39,17 @@ def test_04_cold_start_failure_recovery_and_money_conservation(stack):
     assert before - bal("user:demo") == paid == t["spent"]                                       # user paid exactly for verified work, nothing else
     assert all(c["state"] in ("RELEASED", "REFUNDED") for c in t["contracts"])
     l, a = verify(); assert l["invariants"]["ok"] and l["reconcile_with_audit"]["ok"] and a["ok"]
+
+def test_04b_code_audit_scenario_picks_different_agents(stack):
+    t = run_code_audit(25)
+    assert t["status"] == "COMPLETED", t["result"]
+    ev = events(t["id"])
+    caps = [e["payload"]["capability"] for e in ev if e["type"] == "STAGE_START"]
+    assert "parse_code" in caps and "find_bugs" in caps and "audit_report" in caps
+    settled = [e["payload"]["provider"] for e in ev if e["type"] == "SETTLED"]
+    assert "provider-codeparser" in settled
+    assert "provider-bugfinder" in settled
+    assert "provider-auditwriter" in settled
 
 def test_05_reputation_learned_from_verdicts_not_claims(stack):
     ag = {x["id"]: x for x in httpx.get(BASE + "/registry/agents").json()}

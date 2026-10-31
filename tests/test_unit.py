@@ -199,3 +199,58 @@ def test_constraints_not_applied_to_non_report_capabilities():
     assert v["passed"], "Constraints must not affect clean_data"
     v2 = verifier.verify("sentiment", {"reviews": c["reviews"]}, s, constraints=["xyzzy_nonexistent"])
     assert v2["passed"], "Constraints must not affect sentiment"
+
+# ---- code audit tests: honest passes, cheats fail, distinct winners ----
+from common.domain import generate_code_snippets
+from providers.provider_app import do_parse_code, do_find_bugs, do_audit_report
+from gateway import llm
+
+def code_chain(n=10, seed=42):
+    snippets = generate_code_snippets(n, seed)
+    p = do_parse_code({"snippets": snippets}, "honest")
+    f = do_find_bugs({"snippets": snippets, "parsed": p["parsed"]}, "honest")
+    rep_inp = {"parsed": p["parsed"], "findings": f["findings"]}
+    r = do_audit_report(rep_inp, "honest")
+    return snippets, p, f, rep_inp, r
+
+def test_code_audit_honest_pipeline_passes_verifier():
+    snippets, p, f, rep_inp, r = code_chain()
+    assert verifier.verify("parse_code", {"snippets": snippets}, p)["passed"]
+    assert verifier.verify("find_bugs", {"snippets": snippets, "parsed": p["parsed"]}, f)["passed"]
+    assert verifier.verify("audit_report", rep_inp, r)["passed"]
+
+def test_code_audit_verifier_rejects_cheats():
+    snippets, p, f, rep_inp, r = code_chain()
+    # 1. fabricated parse (extra file / extra function)
+    fp = do_parse_code({"snippets": snippets}, "fabricate")
+    assert not verifier.verify("parse_code", {"snippets": snippets}, fp)["passed"]
+    # 2. random bug scanner
+    ff = do_find_bugs({"snippets": snippets, "parsed": p["parsed"]}, "random")
+    assert not verifier.verify("find_bugs", {"snippets": snippets, "parsed": p["parsed"]}, ff)["passed"]
+    # 3. fabricated bug scanner
+    ff_fab = do_find_bugs({"snippets": snippets, "parsed": p["parsed"]}, "fabricate")
+    assert not verifier.verify("find_bugs", {"snippets": snippets, "parsed": p["parsed"]}, ff_fab)["passed"]
+    # 4. fabricated audit report
+    fr = do_audit_report(rep_inp, "fabricate")
+    assert not verifier.verify("audit_report", rep_inp, fr)["passed"]
+
+def test_code_audit_goal_routing():
+    assert llm._fallback("Perform a security code audit on our contracts")["pipeline"] == "code_audit"
+    assert llm._fallback("Run static analysis to find bugs in python code")["pipeline"] == "code_audit"
+    assert llm._fallback("Analyze customer reviews from headphone launch")["pipeline"] == "reviews"
+
+def test_bayesian_scoring_different_winners_across_different_capabilities():
+    """Proves that Bayesian reputation creates capability-specialized winners.
+    Agent A has high verified reliability on parse_code but low on find_bugs.
+    Agent B has high verified reliability on find_bugs but low on parse_code.
+    Scoring picks Agent A for parse_code and Agent B for find_bugs!"""
+    mk = lambda i, p, e, r: {"provider_id": i, "price": p, "eta_ms": e, "reliability": r}
+    # For parse_code: A has 0.85 verified reliability, B has 0.35
+    bids_parse = [mk("agent-a", 150, 700, 0.85), mk("agent-b", 140, 700, 0.35)]
+    win_parse = scoring.rank(bids_parse, "balanced", 2000, 8000)[0]
+    assert win_parse["provider_id"] == "agent-a", "Agent A must win parse_code"
+
+    # For find_bugs: B has 0.90 verified reliability, A has 0.30
+    bids_bugs = [mk("agent-a", 380, 1200, 0.30), mk("agent-b", 400, 1200, 0.90)]
+    win_bugs = scoring.rank(bids_bugs, "balanced", 2000, 8000)[0]
+    assert win_bugs["provider_id"] == "agent-b", "Agent B must win find_bugs"

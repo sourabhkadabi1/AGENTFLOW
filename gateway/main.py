@@ -104,13 +104,13 @@ async def create_task(req: TaskReq, x_api_key: str = Header(None), idempotency_k
     constraints = [c.strip() for c in req.constraints if c.strip()]
     tid = "t-" + uuid.uuid4().hex[:8]
     db.x("INSERT INTO tasks(id,idem_key,user_id,goal,budget,priority,mode,status,result,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-         (tid, key, DEMO_USER, req.goal, int(round(req.budget_inr * 100)), req.priority, req.mode, "PENDING", json.dumps({"_input": data, "_constraints": constraints}), time.time()))
+         (tid, key, DEMO_USER, req.goal, int(round(req.budget_inr * 100)), req.priority, req.mode, "PENDING", json.dumps({"_input": data, "_constraints": constraints, "_seed": req.seed}), time.time()))
     audit.append(tid, "TASK_CREATED", {"goal": req.goal, "budget": int(round(req.budget_inr * 100)), "priority": req.priority, "mode": req.mode, "n_reviews": len(data), "constraints": constraints})
     t = asyncio.create_task(orchestrator.run_task(tid)); BG.add(t); t.add_done_callback(BG.discard)
     return {"task_id": tid, "duplicate": False}
 
 def _task_view(t):
-    r = json.loads(t["result"] or "{}"); r.pop("_input", None); r.pop("_constraints", None); t["result"] = r; return t
+    r = json.loads(t["result"] or "{}"); r.pop("_input", None); r.pop("_constraints", None); r.pop("_seed", None); t["result"] = r; return t
 
 @app.get("/tasks")
 def tasks(): return [_task_view(t) for t in db.q("SELECT * FROM tasks ORDER BY created_at DESC LIMIT 50")]

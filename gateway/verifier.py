@@ -16,9 +16,9 @@ def verify(capability: str, task_input: dict, output, *, constraints: list[str] 
     try:
         if not chk("output_is_object", isinstance(output, dict), type(output).__name__): return _fin(checks)
         if not chk("size_limit", len(json.dumps(output)) <= MAX_OUTPUT_BYTES): return _fin(checks)
-        {"clean_data": _clean, "sentiment": _sent, "report": _report}[capability](task_input, output, chk)
-        # customer constraints checked AFTER deterministic checks (only on report — final customer-facing output)
-        if constraints and capability == "report":
+        {"clean_data": _clean, "sentiment": _sent, "report": _report, "parse_code": _parse_code, "find_bugs": _find_bugs, "audit_report": _audit_report}[capability](task_input, output, chk)
+        # customer constraints checked AFTER deterministic checks (only on final report)
+        if constraints and capability in ("report", "audit_report"):
             _check_constraints(output, constraints, chk)
     except Exception as e:  # malformed structure must fail closed, never pass
         chk("no_exception", False, f"{type(e).__name__}: {e}")
@@ -85,6 +85,84 @@ def _report(inp, out, chk):
                 pct = 100 * labels.get(k, 0) / max(1, n); allowed |= {pct, round(pct), round(pct, 1)}
             bad = [x for x in re.findall(r"\d+(?:\.\d+)?", nar) if not any(abs(float(x) - a) <= 0.051 for a in allowed)]
             chk("narrative_numbers_grounded", not bad, f"ungrounded numbers: {bad[:5]}")
+
+
+def _parse_code(inp, out, chk):
+    """Verify parsed code output against input snippets. No fabricated files, no swapped code."""
+    src = {s["id"]: s for s in inp["snippets"]}
+    parsed = out.get("parsed")
+    if not chk("has_parsed_list", isinstance(parsed, list)): return
+    ids = [p.get("id") for p in parsed]
+    chk("no_fabricated_ids", all(i in src for i in ids), f"{sum(i not in src for i in ids)} unknown ids")
+    chk("no_duplicate_ids", len(ids) == len(set(ids)))
+    chk("covers_all_files", set(ids) == set(src), f"got {len(ids)} expected {len(src)}")
+    # code must match the original — no swapping between files
+    for p in parsed:
+        if p.get("id") in src:
+            chk(f"code_intact_{p['id']}", norm(p.get("code", "")) == norm(src[p["id"]]["code"]),
+                f"code mismatch in {p.get('file', '?')}")
+    chk("loc_positive", all(isinstance(p.get("loc"), int) and p["loc"] > 0 for p in parsed))
+
+def _find_bugs(inp, out, chk):
+    """Verify bug findings against ground truth from task input. Each snippet has known bugs."""
+    from common.domain import BUG_CATEGORIES
+    src = {s["id"]: s for s in inp["snippets"]}
+    findings = out.get("findings"); cats = out.get("category_counts")
+    if not chk("has_findings_and_counts", isinstance(findings, list) and isinstance(cats, dict)): return
+    chk("valid_categories", all(f.get("category") in BUG_CATEGORIES for f in findings))
+    chk("valid_severity", all(f.get("severity") in ("critical", "high", "medium", "low") for f in findings))
+    # recount bugs from ground truth
+    truth_cats = Counter()
+    for s in src.values():
+        gt = s.get("ground_truth_bugs", {})
+        for cat, cnt in gt.items():
+            truth_cats[cat] += cnt
+    # check that findings match ground truth per file
+    found_by_file = {}
+    for f in findings:
+        fid = f.get("id")
+        if fid not in found_by_file:
+            found_by_file[fid] = Counter()
+        found_by_file[fid][f["category"]] += f.get("count", 0)
+    # verify each file's bug counts match ground truth
+    all_match = True
+    for sid, s in src.items():
+        gt = s.get("ground_truth_bugs", {})
+        got = found_by_file.get(sid, Counter())
+        for cat in set(list(gt.keys()) + list(got.keys())):
+            if gt.get(cat, 0) != got.get(cat, 0):
+                all_match = False
+    chk("bug_counts_match_ground_truth", all_match, f"claimed findings don't match known bugs")
+    # verify category_counts aggregate
+    recount = Counter()
+    for f in findings:
+        recount[f["category"]] += f.get("count", 0)
+    chk("category_counts_match", dict(recount) == dict(cats), f"claimed={cats} recount={dict(recount)}")
+
+def _audit_report(inp, out, chk):
+    """Verify audit report numbers reconcile with parsed+findings input."""
+    parsed = inp["parsed"]; findings = inp["findings"]
+    total_files = len(parsed)
+    true_bugs = sum(f["count"] for f in findings)
+    true_files_with_bugs = len({f["id"] for f in findings})
+    true_clean = total_files - true_files_with_bugs
+    summ = out.get("summary"); ti = out.get("top_issues"); rec = out.get("recommendations")
+    sev = out.get("severity_breakdown")
+    if not chk("has_required_sections", isinstance(summ, str) and isinstance(ti, list) and isinstance(rec, list) and isinstance(sev, dict)): return
+    chk("total_files_exact", out.get("total_files") == total_files, f"claimed={out.get('total_files')} actual={total_files}")
+    chk("total_bugs_exact", out.get("total_bugs") == true_bugs, f"claimed={out.get('total_bugs')} actual={true_bugs}")
+    chk("files_with_bugs_exact", out.get("files_with_bugs") == true_files_with_bugs, f"claimed={out.get('files_with_bugs')} actual={true_files_with_bugs}")
+    chk("clean_files_exact", out.get("clean_files") == true_clean, f"claimed={out.get('clean_files')} actual={true_clean}")
+    # top issues must match recount ranking
+    by_cat = Counter()
+    for f in findings:
+        by_cat[f["category"]] += f["count"]
+    truth_top = sorted(by_cat.items(), key=lambda kv: (-kv[1], kv[0]))[:5]
+    got_top = [(c.get("category"), c.get("count")) for c in ti]
+    chk("top_issues_match_ranking", got_top == truth_top, f"claimed={got_top} actual={truth_top}")
+    chk("has_recommendations", len(rec) >= 3 and all(isinstance(r, str) and len(r) > 10 for r in rec))
+    chk("distinct_recommendations", len({norm(r) for r in rec if isinstance(r, str)}) == len(rec), "duplicate recommendations")
+    chk("summary_nonempty", 20 <= len(summ) <= 2000)
 
 
 def _check_constraints(output: dict, constraints: list[str], chk):

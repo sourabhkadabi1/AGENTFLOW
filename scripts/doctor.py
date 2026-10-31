@@ -7,7 +7,7 @@ line(sys.version_info >= (3, 11), f"python {sys.version.split()[0]} (need >= 3.1
 for m in ("fastapi", "uvicorn", "httpx", "pydantic", "cryptography", "pytest"):
     try: importlib.import_module(m); line(True, f"module {m}")
     except Exception: line(False, f"module {m}", "pip install -r requirements.txt")
-for port in [8000] + list(range(9101, 9109)):
+for port in [8000] + list(range(9101, 9109)) + list(range(9201, 9206)):
     s = socket.socket(); s.settimeout(0.3); busy = s.connect_ex(("127.0.0.1", port)) == 0; s.close()
     if port == 9108: line(not busy, f"port {port} free (optional LLM provider)", "optional")
     else: line(not busy, f"port {port} free", "something is already running there: stop it (an old AgentFlow stack?)")

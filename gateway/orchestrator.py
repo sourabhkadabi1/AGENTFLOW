@@ -54,7 +54,12 @@ async def run_task(task_id: str):
         if floor > budget:
             ev(task_id, "BUDGET_REJECTED", needed_minimum=floor, budget=budget)
             return _fail(task_id, "BUDGET_INSUFFICIENT", spent, wasted)
-        stage_input = {"reviews": data}
+        if plan["pipeline"] == "code_audit":
+            from common.domain import generate_code_snippets
+            code_data = generate_code_snippets(seed=result_json.get("_seed", 42))
+            stage_input = {"snippets": code_data}
+        else:
+            stage_input = {"reviews": data}
         async with httpx.AsyncClient() as c:
             for i, cap in enumerate(pipeline):
                 remaining = budget - spent
@@ -78,7 +83,10 @@ async def run_task(task_id: str):
                     cap_budget = budget - spent - reserve
                 if not done: return _fail(task_id, f"STAGE_FAILED:{cap}", spent, wasted)
                 stage_input = _next_input(cap, results[cap], stage_input)
-        final = {"report": results.get("report"), "stats": {"cleaned": len(results["clean_data"]["reviews"])}}
+        if plan["pipeline"] == "code_audit":
+            final = {"audit_report": results.get("audit_report"), "stats": {"files_audited": results.get("parse_code", {}).get("stats", {}).get("output", 0)}}
+        else:
+            final = {"report": results.get("report"), "stats": {"cleaned": len(results["clean_data"]["reviews"])}}
         _finish(task_id, "COMPLETED", final, spent, wasted)
     except Exception as e:  # never leave a task half-open with money in escrow
         ev(task_id, "BUYER_CRASH", error=f"{type(e).__name__}: {e}")
@@ -87,6 +95,8 @@ async def run_task(task_id: str):
 def _next_input(cap, out, prev):
     if cap == "clean_data": return {"reviews": out["reviews"]}
     if cap == "sentiment": return {"labels": out["labels"], "themes": out["complaint_themes"]}
+    if cap == "parse_code": return {"snippets": prev.get("snippets", []), "parsed": out["parsed"]}
+    if cap == "find_bugs": return {"parsed": prev.get("parsed", []), "findings": out["findings"]}
     return prev
 
 def candidates(cap, excluded):
@@ -100,7 +110,7 @@ async def _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, use
     cands = candidates(cap, excluded)
     rfq_id = uuid.uuid4().hex[:10]
     ev(task_id, "DISCOVERED", capability=cap, providers=[{"id": p["agent_id"], "name": p["name"], "verified_R": p["verified_reliability"], "claimed_R": p["claimed_reliability"], "evidence": p["evidence"]} for p in cands])
-    size = len(stage_input.get("reviews", stage_input.get("labels", [])))
+    size = len(stage_input.get("reviews", stage_input.get("labels", stage_input.get("snippets", stage_input.get("parsed", [])))))
     async def ask(p):
         try: return p, await _call(c, p, "/rfq", {"rfq_id": rfq_id, "capability": cap, "task_size": size, "buyer_id": BUYER_ID}, RFQ_TIMEOUT)
         except Exception as e: return p, {"error": f"{type(e).__name__}:{e}"}

@@ -21,8 +21,18 @@ nonces = signing.NonceCache(); pubkeys = {}
 app = FastAPI(title=f"AgentFlow provider {P['name']}")
 
 def manifest():
-    return {"capabilities": [{"capability": P["capability"], "version": "1.0", "price_hint": P["base_price"], "claimed_reliability": P["claimed"],
-            "input": {"reviews": "list[{id,text,rating}]"} if P["capability"] != "report" else {"labels": "list", "themes": "dict"}}]}
+    cap = P["capability"]
+    if cap in ("clean_data", "sentiment"):
+        inp = {"reviews": "list[{id,text,rating}]"}
+    elif cap == "report":
+        inp = {"labels": "list", "themes": "dict"}
+    elif cap in ("parse_code", "find_bugs"):
+        inp = {"snippets": "list[{id,file,code}]"}
+    elif cap == "audit_report":
+        inp = {"parsed": "list", "findings": "list"}
+    else:
+        inp = {}
+    return {"capabilities": [{"capability": cap, "version": "1.0", "price_hint": P["base_price"], "claimed_reliability": P["claimed"], "input": inp}]}
 
 @app.on_event("startup")
 async def _register():
@@ -140,6 +150,93 @@ def do_report(inp, mode):
     return {"summary": f"Analysed {n} reviews: {br['positive']} positive, {br['neutral']} neutral, {br['negative']} negative ({pct}% positive).",
             "sentiment_breakdown": br, "top_complaints": [{"theme": t, "count": k} for t, k in top], "recommendations": rec[:5]}
 
+# ---------- code audit work ----------
+def do_parse_code(inp, mode):
+    """Parse code snippets: extract structure (functions, imports, LOC). Ground truth is in the input."""
+    snippets = inp["snippets"]
+    parsed = []
+    for s in snippets:
+        code = s["code"]
+        lines = code.strip().split("\n")
+        funcs = [l.strip().split("(")[0].replace("def ", "").replace("function ", "") for l in lines if l.strip().startswith(("def ", "function "))]
+        imports = [l.strip() for l in lines if l.strip().startswith(("import ", "from "))]
+        entry = {"id": s["id"], "file": s["file"], "loc": len(lines), "functions": funcs, "imports": imports, "code": code}
+        if mode == "fabricate":
+            entry["functions"].append("fake_func")
+            entry["loc"] += 10
+        elif mode in ("lazy_echo", "subtle_drift") and parsed:
+            entry["code"] = parsed[-1]["code"]  # swap code between files
+        parsed.append(entry)
+    if mode == "fabricate":
+        parsed.append({"id": "fake-001", "file": "injected.py", "loc": 5, "functions": ["injected"], "imports": [], "code": "# fabricated"})
+    return {"parsed": parsed, "stats": {"input": len(snippets), "output": len(parsed)}}
+
+def do_find_bugs(inp, mode):
+    """Find security bugs in parsed code. The verifier cross-checks against ground truth from the task input."""
+    from common.domain import detect_bugs, BUG_CATEGORIES
+    rng = random.Random(2468)
+    parsed = inp["parsed"]
+    findings = []
+    category_counts = Counter()
+    for p in parsed:
+        if mode == "honest":
+            for b in detect_bugs(p["code"]):
+                findings.append({"id": p["id"], "file": p["file"], "category": b["category"], "count": b["count"], "severity": b["severity"]})
+                category_counts[b["category"]] += b["count"]
+        elif mode == "random":
+            for cat in BUG_CATEGORIES:
+                if rng.random() < 0.35:
+                    c = rng.randint(1, 3)
+                    findings.append({"id": p["id"], "file": p["file"], "category": cat, "count": c, "severity": rng.choice(["high", "medium", "low"])})
+                    category_counts[cat] += c
+        elif mode == "fabricate":
+            # finds true bugs plus hallucinates 2 extra critical bugs in every file
+            for b in detect_bugs(p["code"]):
+                findings.append({"id": p["id"], "file": p["file"], "category": b["category"], "count": b["count"] + 1, "severity": "critical"})
+                category_counts[b["category"]] += b["count"] + 1
+            findings.append({"id": p["id"], "file": p["file"], "category": "sql_injection", "count": 2, "severity": "critical"})
+            category_counts["sql_injection"] += 2
+    if mode in ("lazy_echo", "subtle_drift"):
+        # downgrade all severities to invalid low
+        for f in findings: f["severity"] = "low"
+    return {"findings": findings, "category_counts": dict(category_counts)}
+
+def do_audit_report(inp, mode):
+    """Generate the final security audit report from parsed code and findings."""
+    parsed = inp["parsed"]; findings = inp["findings"]
+    total_files = len(parsed)
+    total_bugs = sum(f["count"] for f in findings)
+    by_severity = Counter(f["severity"] for f in findings)
+    by_category = Counter()
+    for f in findings:
+        by_category[f["category"]] += f["count"]
+    top_issues = sorted(by_category.items(), key=lambda kv: (-kv[1], kv[0]))[:5]
+    files_with_bugs = len({f["id"] for f in findings})
+    clean_files = total_files - files_with_bugs
+    risk_score = min(100, total_bugs * 10) if total_bugs > 0 else 0
+    if mode == "fabricate":
+        risk_score = max(0, risk_score - 50)
+        total_bugs = max(0, total_bugs - 5)
+        by_severity = {"low": by_severity.get("low", 0) + 10, "medium": 0, "high": 0}
+    remediation = {
+        "sql_injection": "Use parameterized queries instead of string formatting",
+        "xss": "Sanitize user input and use textContent instead of innerHTML",
+        "hardcoded_secret": "Move secrets to environment variables or a vault",
+        "insecure_random": "Use secrets.token_hex() or os.urandom() for security tokens",
+        "missing_auth": "Add authentication middleware to all endpoints",
+        "race_condition": "Use threading.Lock or asyncio primitives for shared state",
+    }
+    recommendations = [f"{remediation.get(cat, 'Investigate ' + cat)} ({cnt} occurrence{'s' if cnt > 1 else ''})" for cat, cnt in top_issues]
+    while len(recommendations) < 3:
+        recommendations.append(f"Continue monitoring codebase for security issue #{len(recommendations)+1}")
+    if mode in ("lazy_echo", "subtle_drift"):
+        recommendations = [recommendations[0]] * len(recommendations)
+    summary = f"Audited {total_files} files: found {total_bugs} security issues across {files_with_bugs} files. {clean_files} files are clean. Risk score: {risk_score}/100."
+    return {"summary": summary, "total_files": total_files, "total_bugs": total_bugs,
+            "files_with_bugs": files_with_bugs, "clean_files": clean_files, "risk_score": risk_score,
+            "severity_breakdown": dict(by_severity), "top_issues": [{"category": c, "count": k} for c, k in top_issues],
+            "recommendations": recommendations[:5]}
+
 async def narrative(report: dict, mode: str):
     """LLM-written prose around the (deterministic) numbers. The verifier checks every number in it against the truth."""
     br = report["sentiment_breakdown"]; top = report["top_complaints"]
@@ -162,7 +259,7 @@ async def execute(request: Request):
     await asyncio.sleep(P["eta_ms"] / 1000 * 0.6)
     inp = d["input"]
     if mode == "garbage": out = {"result": "lorem ipsum", "note": "trust me"}
-    else: out = {"clean_data": do_clean, "sentiment": do_sentiment, "report": do_report}[P["capability"]](inp, mode)
+    else: out = {"clean_data": do_clean, "sentiment": do_sentiment, "report": do_report, "parse_code": do_parse_code, "find_bugs": do_find_bugs, "audit_report": do_audit_report}[P["capability"]](inp, mode)
     if P.get("llm") and P["capability"] == "report" and "sentiment_breakdown" in out:
         out["narrative"], out["narrative_source"] = await narrative(out, mode)
     state["executed"][cid] = out

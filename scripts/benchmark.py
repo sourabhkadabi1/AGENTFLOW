@@ -10,7 +10,7 @@ N = int(sys.argv[1]) if len(sys.argv) > 1 else 8
 def wait_providers():
     for _ in range(60):
         try:
-            if sum(1 for a in httpx.get(B + "/registry/agents").json() if a["role"] == "provider" and a["healthy"]) >= 7: return
+            if sum(1 for a in httpx.get(B + "/registry/agents").json() if a["role"] == "provider" and a["healthy"]) >= 12: return
         except Exception: pass
         time.sleep(1)
     raise SystemExit("providers did not re-register")

@@ -32,6 +32,10 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;co
 <main>
 <div>
  <section><h2>Submit a goal</h2>
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+   <button type="button" class="ghost sm" id="pre1" style="flex:1;cursor:pointer;font-weight:600;padding:6px">📊 Reviews Scenario</button>
+   <button type="button" class="ghost sm" id="pre2" style="flex:1;cursor:pointer;font-weight:600;padding:6px">🛡️ Code Audit Scenario</button>
+  </div>
   <label for="goal">Goal</label><input id="goal" value="Analyze customer reviews and produce a report">
   <label for="bud">Budget (₹)</label><input id="bud" type="number" value="20" min="1" step="1">
   <label for="pri">Priority</label><select id="pri"><option value="balanced">Balanced cost and reliability</option><option value="auto">Auto (AI Risk & Policy Brain)</option><option value="reliability">Highest reliability</option><option value="cost">Lowest cost</option></select>
@@ -195,6 +199,16 @@ async function refresh(){
  $("headhash").textContent=av.head?`head: ${av.head.slice(0,10)}…`:"head: BROKEN";$("aud").textContent=av.ok?`audit chain intact (${av.checked} records)`:`audit BROKEN at record #${av.broken_at_seq}`;$("aud").className="pill "+(av.ok?"ok":"bad");
  const lok=lv.invariants.ok&&lv.reconcile_with_audit.ok;$("led").textContent=lok?"ledger balanced and reconciled":"ledger MISMATCH";$("led").className="pill "+(lok?"ok":"bad");
  const bm=await J("/benchmark");if(bm.agentflow){$("bench").innerHTML=`<table><tr><th></th><th class="num">Correct</th><th class="num">Bad-work ₹</th><th class="num">Spent ₹</th></tr>`+Object.entries(bm).map(([k,v])=>`<tr><td>${k}</td><td class="num">${v.correct_deliverable_pct}%</td><td class="num">${v.avg_paid_for_bad_work_inr}</td><td class="num">${v.avg_spent_inr}</td></tr>`).join("")+`</table><p class="tiny">${Object.values(bm)[0].runs} runs per policy, averages. 'naive' spends less because it pays for garbage and delivers a wrong report. Compare the Correct column, not Spent.</p>`}}
+$("pre1").onclick=()=>{
+ $("goal").value="Analyze customer reviews and produce a report";
+ $("bud").value="20";
+ $("constraints").value="must mention battery issues\nminimum 5 recommendations\nmust mention sound";
+};
+$("pre2").onclick=()=>{
+ $("goal").value="Run a security code audit to find vulnerabilities and bugs";
+ $("bud").value="25";
+ $("constraints").value="must mention sql_injection\nminimum 3 recommendations\nmust mention xss";
+};
 $("run").onclick=async()=>{
  $("run").disabled=true; $("run").textContent="Task in progress...";
  await J("/tasks",{method:"POST",headers:{...H,"content-type":"application/json","idempotency-key":crypto.randomUUID()},body:JSON.stringify({goal:$("goal").value,budget_inr:+$("bud").value,priority:$("pri").value,mode:$("mode").value,n_reviews:150,constraints:$("constraints").value.split("\n").filter(s=>s.trim())})});
