@@ -39,12 +39,13 @@ def register_system_agents():
 async def run_task(task_id: str):
     t = db.q1("SELECT * FROM tasks WHERE id=?", (task_id,)); mode, user = t["mode"], t["user_id"]
     prio = "cheapest" if mode in ("naive", "cheapest_verified") else t["priority"]
-    data = json.loads(t["result"])["_input"]; budget = t["budget"]; spent = wasted = 0; results = {}
+    result_json = json.loads(t["result"]); data = result_json["_input"]; constraints = result_json.get("_constraints", [])
+    budget = t["budget"]; spent = wasted = 0; results = {}
     db.x("UPDATE tasks SET status='RUNNING' WHERE id=?", (task_id,))
     try:
         plan = await llm.interpret_goal(t["goal"]); pipeline = llm.PIPELINES[plan["pipeline"]]
         pol = await policy.derive_policy(t["goal"], prio, budget)
-        ev(task_id, "PLAN", pipeline=pipeline, budget=budget, priority=t["priority"], mode=mode, interpreted_by=plan["source"])
+        ev(task_id, "PLAN", pipeline=pipeline, budget=budget, priority=t["priority"], mode=mode, interpreted_by=plan["source"], constraints=constraints)
         ev(task_id, "POLICY_DECISION", profile=pol["profile"], weights=list(pol["weights"]), min_reliability=pol["min_reliability"], discount_target=pol["discount_target"], reason=pol["reason"], source=pol["source"])
         hints = {cap: min([a["price_hint"] for a in registry.discover(cap)] or [None] or [0]) for cap in pipeline}
         if any(h is None for h in hints.values()):
@@ -62,10 +63,10 @@ async def run_task(task_id: str):
                 excluded, done = set(), False
                 for attempt in range(MAX_RETRIES + 1):
                     ev(task_id, "STAGE_START", capability=cap, attempt=attempt, stage_budget=cap_budget)
-                    won = await _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, user, mode, pol)
+                    won = await _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, user, mode, pol, constraints)
                     if won is None:     # one grace retry: transient timeouts / health blips must not fail a stage
                         ev(task_id, "NO_ELIGIBLE_BID_RETRYING", capability=cap, attempt=attempt); await asyncio.sleep(1.0)
-                        won = await _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, user, mode, pol)
+                        won = await _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, user, mode, pol, constraints)
                     if won is None: ev(task_id, "NO_ELIGIBLE_BID", capability=cap, attempt=attempt); break
                     cid, prov, price, out, verdict, paid = won
                     if paid: spent += gross(price); cap_budget = budget - spent - reserve
@@ -94,7 +95,7 @@ def candidates(cap, excluded):
     c = [p for p in registry.discover(cap) if p["agent_id"] not in excluded]
     return c or [p for p in registry.discover(cap, include_unhealthy=True) if p["agent_id"] not in excluded]
 
-async def _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, user, mode, pol=None):
+async def _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, user, mode, pol=None, constraints=None):
     """Returns (contract_id, provider, price, output, verdict, paid) or None if no eligible bid."""
     cands = candidates(cap, excluded)
     rfq_id = uuid.uuid4().hex[:10]
@@ -153,11 +154,13 @@ async def _procure(c, task_id, cap, stage_input, prio, cap_budget, excluded, use
         ev(task_id, "CONTRACT", contract_id=cid, provider=wp["agent_id"], price=price, fee=fee(price), escrow_held=gross(price), terms_sha=signing.body_hash(tb)[:16])
     # execute
     t0 = time.time(); out = None; err = None
-    try: out = (await _call(c, wp, "/execute", {"contract_id": cid, "capability": cap, "input": stage_input, "deadline_ms": terms["deadline_ms"]}, EXEC_TIMEOUT))["output"]
+    exec_payload = {"contract_id": cid, "capability": cap, "input": stage_input, "deadline_ms": terms["deadline_ms"]}
+    if constraints: exec_payload["constraints"] = constraints   # provider sees customer criteria
+    try: out = (await _call(c, wp, "/execute", exec_payload, EXEC_TIMEOUT))["output"]
     except Exception as e: err = f"{type(e).__name__}:{str(e)[:80] or 'timeout'}"
     ms = int((time.time() - t0) * 1000)
     ev(task_id, "DELIVERY", contract_id=cid, provider=wp["agent_id"], latency_ms=ms, error=err, output_bytes=len(json.dumps(out)) if out else 0)
-    v = verifier.verify(cap, stage_input, out) if err is None else {"passed": False, "score": 0, "checks": [], "reason": f"delivery_error:{err}"}
+    v = verifier.verify(cap, stage_input, out, constraints=constraints or []) if err is None else {"passed": False, "score": 0, "checks": [], "reason": f"delivery_error:{err}"}
     vsig = signing.sign_blob(VERIFIER_KEY, json.dumps({"c": cid, "passed": v["passed"], "reason": v["reason"]}, sort_keys=True).encode())
     if mode == "naive":   # baseline pays on delivery, no verdict used; verdict recorded only as hidden ground truth for the benchmark
         ledger.release(cid, wp["agent_id"], price, task_id)

@@ -169,3 +169,33 @@ def test_v2_hardened_verifier_catches_lazy_echo_and_subtle_drift():
     rep = do_report(rin, "lazy_echo")
     v_rep = verifier.verify("report", rin, rep)
     assert not v_rep["passed"] and "distinct_recommendations" in v_rep["reason"]
+
+def test_constraint_verification_keyword_presence():
+    """Customer constraints: keyword must appear in report output."""
+    c, s, rin = chain()
+    r = do_report(rin, "honest")
+    # "positive" appears in sentiment_breakdown keys, so it WILL be in the serialised output
+    v = verifier.verify("report", rin, r, constraints=["positive"])
+    assert v["passed"], f"Expected pass but got: {v}"
+    # "xyzzy_nonexistent_keyword" will NOT be in any honest report
+    v2 = verifier.verify("report", rin, r, constraints=["xyzzy_nonexistent_keyword"])
+    assert not v2["passed"], "Expected fail for missing keyword"
+    assert any("constraint_1" in c_["name"] for c_ in v2["checks"] if not c_["ok"])
+
+def test_constraint_verification_minimum_recommendations():
+    """Customer constraints: 'minimum N recommendations' structural check."""
+    c, s, rin = chain()
+    r = do_report(rin, "honest")
+    # honest reports have exactly 5 recommendations
+    v = verifier.verify("report", rin, r, constraints=["minimum 5 recommendations"])
+    assert v["passed"], f"Expected pass but got: {v}"
+    v2 = verifier.verify("report", rin, r, constraints=["minimum 10 recommendations"])
+    assert not v2["passed"], "Expected fail: only 5 recs, asked for 10"
+
+def test_constraints_not_applied_to_non_report_capabilities():
+    """Constraints are only enforced on the report stage, not clean_data or sentiment."""
+    c, s, rin = chain()
+    v = verifier.verify("clean_data", {"reviews": D}, c, constraints=["xyzzy_nonexistent"])
+    assert v["passed"], "Constraints must not affect clean_data"
+    v2 = verifier.verify("sentiment", {"reviews": c["reviews"]}, s, constraints=["xyzzy_nonexistent"])
+    assert v2["passed"], "Constraints must not affect sentiment"

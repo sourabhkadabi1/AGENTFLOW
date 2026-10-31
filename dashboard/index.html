@@ -36,7 +36,12 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;co
   <label for="bud">Budget (₹)</label><input id="bud" type="number" value="20" min="1" step="1">
   <label for="pri">Priority</label><select id="pri"><option value="balanced">Balanced cost and reliability</option><option value="auto">Auto (AI Risk & Policy Brain)</option><option value="reliability">Highest reliability</option><option value="cost">Lowest cost</option></select>
   <label for="mode">Buyer policy</label><select id="mode"><option value="agentflow">AgentFlow (trust-weighted, verified, escrow)</option><option value="cheapest_verified">Cheapest + verification</option><option value="naive">Naive cheapest, pay on delivery</option></select>
+  <label for="constraints">Customer Constraints <span class="tiny">(one per line — checked by verifier on final report)</span></label><textarea id="constraints" rows="3" style="width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;resize:vertical" placeholder="e.g. must mention battery issues&#10;minimum 5 recommendations&#10;must mention sound"></textarea>
   <button id="run">Run task</button>
+  <div id="taskbox" style="margin-top:10px;padding:8px 10px;border-radius:var(--r);background:var(--bg);border:1px solid var(--line);font-size:12px;display:none">
+   <div id="taskstate" style="font-weight:600">Idle</div>
+   <div id="taskdetail" class="tiny" style="margin-top:2px">Waiting for customer task.</div>
+  </div>
   <div class="row tiny" style="margin-top:10px"><span>User balance</span><b id="ubal" class="num">–</b></div>
  </section>
  <section><h2>Inject provider failure</h2><div id="inj"></div><p class="tiny">Changes how a live provider process behaves. Reputation reacts to verifier verdicts only.</p></section>
@@ -44,7 +49,16 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;co
   <button class="ghost" id="vf">Verify hash chain</button><button class="ghost" id="tm">Tamper with an old record</button><div id="tmout" class="tiny" style="margin-top:6px"></div>
   <button class="ghost" id="rs">Reset demo state</button></section>
 </div>
-<div><section><h2>Live tape (every event is hash-chained)</h2><div id="tape" aria-live="polite"></div></section></div>
+<div><section>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <h2 style="margin:0">Live tape (every event is hash-chained)</h2>
+    <div style="display:flex;gap:6px">
+      <button class="ghost sm" id="pausebtn" style="width:auto;cursor:pointer">⏸️ Pause</button>
+      <button class="ghost sm" id="slowbtn" style="width:auto;cursor:pointer;color:var(--teal)">⏱️ Demo pace: ON</button>
+    </div>
+  </div>
+  <div id="tape" aria-live="polite"></div>
+</section></div>
 <div>
  <section><h2>Providers: claimed vs verified</h2><table><thead><tr><th>Agent</th><th>Does</th><th class="num">₹</th><th class="num">Bond ₹</th><th class="num">Claimed</th><th class="num">Verified</th></tr></thead><tbody id="prov"></tbody></table>
   <p class="tiny">The buyer scores on the verified column. Claims are ignored.</p></section>
@@ -57,8 +71,8 @@ const inr=p=>(p/100).toFixed(2),short=s=>(s||"").replace("provider-","");
 function formatEvent(T, p) {
  try {
   switch (T) {
-   case "TASK_CREATED": return ["info", `goal received, budget ₹${inr(p.budget)}, policy ${p.mode}`];
-   case "PLAN": return ["info", `plan ${(p.pipeline||[]).join(" → ")}`];
+   case "TASK_CREATED": return ["info", `goal received, budget ₹${inr(p.budget)}, policy ${p.mode}${p.constraints&&p.constraints.length?" | 📋 "+p.constraints.length+" customer constraint(s)":""}`];
+   case "PLAN": return ["info", `plan ${(p.pipeline||[]).join(" → ")}${p.constraints&&p.constraints.length?" | constraints: "+p.constraints.join(", "):""}`];
    case "POLICY_DECISION": return ["info", `brain policy ${p.profile}: weights wR=${p.weights?.[0]}, wC=${p.weights?.[1]}, wT=${p.weights?.[2]} (${p.source})`];
    case "BOND_SLASHED": return ["bad", `slashed ₹${inr(p.slashed_paise)} from ${short(p.provider)} bond (remaining ₹${inr(p.remaining_bond)})`];
    case "STAGE_START": return ["info", `${p.capability} attempt ${(p.attempt||0)+1}, stage budget ₹${inr(p.stage_budget)}`];
@@ -102,7 +116,72 @@ function line(e){
  d.lastChild.textContent=m[1];
  return d;
 }
-const tape=$("tape");let es;function connect(){es=new EventSource("/stream");es.onmessage=m=>{const near=tape.scrollTop+tape.clientHeight>tape.scrollHeight-60;tape.appendChild(line(JSON.parse(m.data)));if(near)tape.scrollTop=tape.scrollHeight}}connect();
+function updateTaskStatus(e) {
+ const p = e.payload || {}, T = e.type;
+ const box = $("taskbox"), state = $("taskstate"), detail = $("taskdetail"), btn = $("run");
+ if (!box) return;
+ if (T === "TASK_CREATED") {
+  box.style.display = "block"; box.style.borderColor = "var(--blue)";
+  state.textContent = "🚀 Task in Progress";
+  detail.textContent = `Goal accepted (budget ₹${inr(p.budget)})${p.constraints&&p.constraints.length?" with "+p.constraints.length+" constraint(s)":""}. Planning workflow...`;
+  btn.disabled = true; btn.textContent = "Task running...";
+ } else if (T === "STAGE_START") {
+  box.style.display = "block"; box.style.borderColor = "var(--blue)";
+  state.textContent = `⏳ Stage: ${p.capability} (attempt ${(p.attempt||0)+1})`;
+  detail.textContent = "Soliciting bids & executing with verification...";
+ } else if (T === "REFUNDED") {
+  box.style.borderColor = "var(--amber)";
+  state.textContent = `🛡️ Refunded ${short(p.provider)} (bad work)`;
+  detail.textContent = "Verification failed → 100% refunded to user. Searching next provider...";
+ } else if (T === "SETTLED") {
+  box.style.borderColor = "var(--teal)";
+  state.textContent = `✅ ${short(p.provider)} verified & settled`;
+  detail.textContent = `Output verified. Moving to next pipeline stage...`;
+ } else if (T === "TASK_COMPLETED") {
+  box.style.borderColor = "var(--teal)";
+  state.textContent = "🏁 Task Complete (Idle)";
+  detail.textContent = `Finished! Spent ₹${inr(p.spent)}, ₹${inr(p.wasted_on_bad_work)} on bad work. System is waiting for your next task.`;
+  btn.disabled = false; btn.textContent = "Run task";
+ } else if (T === "TASK_FAILED") {
+  box.style.borderColor = "var(--red)";
+  state.textContent = "❌ Task Stopped (Idle)";
+  detail.textContent = `Task stopped: ${p.reason}. System is waiting for your next task.`;
+  btn.disabled = false; btn.textContent = "Run task";
+ }
+}
+const tape=$("tape");
+let es, isPaused=false, slowMo=true, initialBurst=true;
+const eventQueue=[]; let queueTimer=null;
+function drainQueue(){
+ if(isPaused || eventQueue.length===0){ queueTimer=null; return; }
+ const ev=eventQueue.shift();
+ updateTaskStatus(ev);
+ const near=tape.scrollTop+tape.clientHeight>tape.scrollHeight-60;
+ tape.appendChild(line(ev));
+ if(near)tape.scrollTop=tape.scrollHeight;
+ const delay=initialBurst ? 8 : (slowMo ? 550 : 30);
+ if(eventQueue.length===0) initialBurst=false;
+ queueTimer=setTimeout(drainQueue, delay);
+}
+function connect(){
+ es=new EventSource("/stream");
+ es.onmessage=m=>{
+  eventQueue.push(JSON.parse(m.data));
+  if(!queueTimer && !isPaused) drainQueue();
+ };
+}
+connect();
+$("pausebtn").onclick=()=>{
+ isPaused=!isPaused;
+ $("pausebtn").textContent=isPaused?"▶️ Resume":"⏸️ Pause";
+ $("pausebtn").style.borderColor=isPaused?"var(--amber)":"var(--line)";
+ if(!isPaused && !queueTimer) drainQueue();
+};
+$("slowbtn").onclick=()=>{
+ slowMo=!slowMo;
+ $("slowbtn").textContent=slowMo?"⏱️ Demo pace: ON":"⏱️ Fast pace";
+ $("slowbtn").style.color=slowMo?"var(--teal)":"var(--mute)";
+};
 async function J(u,o){const r=await fetch(u,o);return r.json()}
 async function refresh(){
  const ag=await J("/registry/agents");$("prov").innerHTML="";const inj=$("inj");const first=!inj.children.length;
@@ -116,9 +195,15 @@ async function refresh(){
  $("headhash").textContent=av.head?`head: ${av.head.slice(0,10)}…`:"head: BROKEN";$("aud").textContent=av.ok?`audit chain intact (${av.checked} records)`:`audit BROKEN at record #${av.broken_at_seq}`;$("aud").className="pill "+(av.ok?"ok":"bad");
  const lok=lv.invariants.ok&&lv.reconcile_with_audit.ok;$("led").textContent=lok?"ledger balanced and reconciled":"ledger MISMATCH";$("led").className="pill "+(lok?"ok":"bad");
  const bm=await J("/benchmark");if(bm.agentflow){$("bench").innerHTML=`<table><tr><th></th><th class="num">Correct</th><th class="num">Bad-work ₹</th><th class="num">Spent ₹</th></tr>`+Object.entries(bm).map(([k,v])=>`<tr><td>${k}</td><td class="num">${v.correct_deliverable_pct}%</td><td class="num">${v.avg_paid_for_bad_work_inr}</td><td class="num">${v.avg_spent_inr}</td></tr>`).join("")+`</table><p class="tiny">${Object.values(bm)[0].runs} runs per policy, averages. 'naive' spends less because it pays for garbage and delivers a wrong report. Compare the Correct column, not Spent.</p>`}}
-$("run").onclick=async()=>{$("run").disabled=true;await J("/tasks",{method:"POST",headers:{...H,"content-type":"application/json","idempotency-key":crypto.randomUUID()},body:JSON.stringify({goal:$("goal").value,budget_inr:+$("bud").value,priority:$("pri").value,mode:$("mode").value,n_reviews:150})});setTimeout(()=>$("run").disabled=false,1500)};
+$("run").onclick=async()=>{
+ $("run").disabled=true; $("run").textContent="Task in progress...";
+ await J("/tasks",{method:"POST",headers:{...H,"content-type":"application/json","idempotency-key":crypto.randomUUID()},body:JSON.stringify({goal:$("goal").value,budget_inr:+$("bud").value,priority:$("pri").value,mode:$("mode").value,n_reviews:150,constraints:$("constraints").value.split("\n").filter(s=>s.trim())})});
+};
 $("vf").onclick=refresh;$("tm").onclick=async()=>{const r=await J("/demo/tamper",{method:"POST",headers:A});$("tmout").textContent=`edited record #${r.tampered_seq} directly in SQLite. Verification now: ${r.verify_now.ok?"still ok (unexpected)":"BROKEN at #"+r.verify_now.broken_at_seq}`;refresh()};
-$("rs").onclick=async()=>{await J("/demo/reset",{method:"POST",headers:A});tape.innerHTML="";es.close();connect();$("inj").innerHTML="";setTimeout(refresh,500)};
+$("rs").onclick=async()=>{
+ eventQueue.length=0; if(queueTimer){clearTimeout(queueTimer); queueTimer=null;} initialBurst=true;
+ await J("/demo/reset",{method:"POST",headers:A});tape.innerHTML="";es.close();connect();$("inj").innerHTML="";setTimeout(refresh,500)
+};
 (async()=>{const c=await J("/config");
  if(c.dev_tokens){H["x-api-key"]="dev-user-key";A["x-admin-token"]="dev-admin-token"}
  else{H["x-api-key"]=sessionStorage.af_key||prompt("User API key (ask the team)")||"";sessionStorage.af_key=H["x-api-key"];A["x-admin-token"]=sessionStorage.af_adm||prompt("Admin token (leave blank for view-only)")||"";sessionStorage.af_adm=A["x-admin-token"]}

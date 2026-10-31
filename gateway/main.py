@@ -85,6 +85,7 @@ class TaskReq(BaseModel):
     n_reviews: int = Field(default=200, ge=10, le=2000)
     seed: int = 7
     reviews: list | None = None
+    constraints: list[str] = []   # customer-specified acceptance criteria checked by verifier
 
 @app.post("/tasks")
 async def create_task(req: TaskReq, x_api_key: str = Header(None), idempotency_key: str = Header(None)):
@@ -99,15 +100,16 @@ async def create_task(req: TaskReq, x_api_key: str = Header(None), idempotency_k
         ok = 10 <= len(req.reviews) <= 3000 and all(isinstance(r, dict) and {"id", "text", "rating"} <= set(r) and isinstance(r["text"], str) and isinstance(r["rating"], int) and 1 <= r["rating"] <= 5 and len(r["text"]) <= 2000 for r in req.reviews)
         if not ok or len({r["id"] for r in req.reviews}) != len(req.reviews): raise HTTPException(422, "reviews must be 10-3000 unique {id,text,rating 1-5} objects")
     data = req.reviews or generate_reviews(req.n_reviews, req.seed)
+    constraints = [c.strip() for c in req.constraints if c.strip()]
     tid = "t-" + uuid.uuid4().hex[:8]
     db.x("INSERT INTO tasks(id,idem_key,user_id,goal,budget,priority,mode,status,result,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
-         (tid, key, DEMO_USER, req.goal, int(round(req.budget_inr * 100)), req.priority, req.mode, "PENDING", json.dumps({"_input": data}), time.time()))
-    audit.append(tid, "TASK_CREATED", {"goal": req.goal, "budget": int(round(req.budget_inr * 100)), "priority": req.priority, "mode": req.mode, "n_reviews": len(data)})
+         (tid, key, DEMO_USER, req.goal, int(round(req.budget_inr * 100)), req.priority, req.mode, "PENDING", json.dumps({"_input": data, "_constraints": constraints}), time.time()))
+    audit.append(tid, "TASK_CREATED", {"goal": req.goal, "budget": int(round(req.budget_inr * 100)), "priority": req.priority, "mode": req.mode, "n_reviews": len(data), "constraints": constraints})
     t = asyncio.create_task(orchestrator.run_task(tid)); BG.add(t); t.add_done_callback(BG.discard)
     return {"task_id": tid, "duplicate": False}
 
 def _task_view(t):
-    r = json.loads(t["result"] or "{}"); r.pop("_input", None); t["result"] = r; return t
+    r = json.loads(t["result"] or "{}"); r.pop("_input", None); r.pop("_constraints", None); t["result"] = r; return t
 
 @app.get("/tasks")
 def tasks(): return [_task_view(t) for t in db.q("SELECT * FROM tasks ORDER BY created_at DESC LIMIT 50")]

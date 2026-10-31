@@ -9,7 +9,7 @@ import os
 SENT_AGREEMENT_MIN = float(os.getenv("SENT_AGREEMENT_MIN", "0.75"))   # lower (e.g. 0.65) for real-world data; calibrate BEFORE the demo
 THEME_TOL = 0.25
 
-def verify(capability: str, task_input: dict, output) -> dict:
+def verify(capability: str, task_input: dict, output, *, constraints: list[str] | None = None) -> dict:
     """Returns {passed, score, checks:[{name,ok,detail}], reason}"""
     checks = []
     def chk(name, ok, detail=""): checks.append({"name": name, "ok": bool(ok), "detail": str(detail)[:160]}); return ok
@@ -17,6 +17,9 @@ def verify(capability: str, task_input: dict, output) -> dict:
         if not chk("output_is_object", isinstance(output, dict), type(output).__name__): return _fin(checks)
         if not chk("size_limit", len(json.dumps(output)) <= MAX_OUTPUT_BYTES): return _fin(checks)
         {"clean_data": _clean, "sentiment": _sent, "report": _report}[capability](task_input, output, chk)
+        # customer constraints checked AFTER deterministic checks (only on report — final customer-facing output)
+        if constraints and capability == "report":
+            _check_constraints(output, constraints, chk)
     except Exception as e:  # malformed structure must fail closed, never pass
         chk("no_exception", False, f"{type(e).__name__}: {e}")
     return _fin(checks)
@@ -82,3 +85,26 @@ def _report(inp, out, chk):
                 pct = 100 * labels.get(k, 0) / max(1, n); allowed |= {pct, round(pct), round(pct, 1)}
             bad = [x for x in re.findall(r"\d+(?:\.\d+)?", nar) if not any(abs(float(x) - a) <= 0.051 for a in allowed)]
             chk("narrative_numbers_grounded", not bad, f"ungrounded numbers: {bad[:5]}")
+
+
+def _check_constraints(output: dict, constraints: list[str], chk):
+    """Deterministic customer-constraint checks on the final report. No LLM — keyword substring matching only.
+    Each constraint is checked against the full serialized output text (summary, recommendations, narrative, themes)."""
+    searchable = json.dumps(output).lower()
+    for i, con in enumerate(constraints):
+        # parse "minimum N recommendations" style constraints
+        words = con.lower().strip().split()
+        if len(words) >= 3 and words[0] == "minimum" and words[1].isdigit():
+            count = int(words[1])
+            target = " ".join(words[2:])
+            if "recommendation" in target:
+                actual = len(output.get("recommendations", []))
+                chk(f"constraint_{i+1}", actual >= count, f"'{con}' — found {actual}, need ≥{count}")
+            elif "complaint" in target or "theme" in target:
+                actual = len(output.get("top_complaints", []))
+                chk(f"constraint_{i+1}", actual >= count, f"'{con}' — found {actual}, need ≥{count}")
+            else:
+                chk(f"constraint_{i+1}", con.lower().strip() in searchable, f"'{con}' — not found in output")
+        else:
+            # keyword / phrase presence check
+            chk(f"constraint_{i+1}", con.lower().strip() in searchable, f"'{con}' — not found in report output")
