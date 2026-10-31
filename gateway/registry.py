@@ -7,10 +7,12 @@ def register(agent_id, name, role, pubkey, endpoint, manifest):
     with db.tx():
         ex = db.q1("SELECT pubkey FROM agents WHERE id=?", (agent_id,))
         if ex and ex["pubkey"] != pubkey: raise ValueError("agent_id_bound_to_different_key")
+        is_new = ex is None
         if ex: db.x("UPDATE agents SET name=?,role=?,endpoint=?,manifest=?,healthy=1 WHERE id=?", (name, role, endpoint, json.dumps(manifest), agent_id))
         else: db.x("INSERT INTO agents(id,name,role,pubkey,endpoint,manifest,created_at) VALUES(?,?,?,?,?,?,?)", (agent_id, name, role, pubkey, endpoint, json.dumps(manifest), time.time()))
         for cap in manifest.get("capabilities", []):
             db.x("INSERT OR IGNORE INTO reputation(agent_id,capability) VALUES(?,?)", (agent_id, cap["capability"]))
+        return is_new
 
 def get(agent_id):
     a = db.q1("SELECT * FROM agents WHERE id=?", (agent_id,))

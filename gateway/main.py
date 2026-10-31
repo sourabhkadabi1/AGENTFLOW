@@ -53,10 +53,11 @@ async def register(request: Request):
     ok, why = signing.verify_headers(d.pubkey, request.headers, "POST", "/registry/register", body, nonces)  # proof of key possession
     if not ok: raise HTTPException(401, why)
     if request.headers["x-agent-id"] != d.agent_id: raise HTTPException(401, "agent_id_mismatch")
-    try: registry.register(d.agent_id, d.name, d.role, d.pubkey, d.endpoint, d.manifest.model_dump())
+    try: is_new = registry.register(d.agent_id, d.name, d.role, d.pubkey, d.endpoint, d.manifest.model_dump())
     except ValueError as e: raise HTTPException(409, str(e))
     ledger.stake_bond(d.agent_id)
-    audit.append(None, "AGENT_REGISTERED", {"agent_id": d.agent_id, "name": d.name, "pubkey_prefix": d.pubkey[:12], "capabilities": [c["capability"] for c in d.manifest.capabilities], "bond_paise": ledger.balance(f"bond:{d.agent_id}")})
+    if is_new:
+        audit.append(None, "AGENT_REGISTERED", {"agent_id": d.agent_id, "name": d.name, "pubkey_prefix": d.pubkey[:12], "capabilities": [c["capability"] for c in d.manifest.capabilities], "bond_paise": ledger.balance(f"bond:{d.agent_id}")})
     return {"ok": True}
 
 @app.get("/registry/agents")
