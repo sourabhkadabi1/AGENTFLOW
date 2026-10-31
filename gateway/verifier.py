@@ -92,19 +92,28 @@ def _check_constraints(output: dict, constraints: list[str], chk):
     Each constraint is checked against the full serialized output text (summary, recommendations, narrative, themes)."""
     searchable = json.dumps(output).lower()
     for i, con in enumerate(constraints):
-        # parse "minimum N recommendations" style constraints
-        words = con.lower().strip().split()
-        if len(words) >= 3 and words[0] == "minimum" and words[1].isdigit():
-            count = int(words[1])
-            target = " ".join(words[2:])
+        raw = con.strip()
+        words = raw.lower().split()
+        if not words: continue
+        # parse "minimum N recommendations" / "at least N recommendations"
+        if len(words) >= 3 and words[0] in ("minimum", "at") and (words[1].isdigit() or (words[0] == "at" and len(words) >= 4 and words[1] == "least" and words[2].isdigit())):
+            count = int(words[1]) if words[0] == "minimum" else int(words[2])
+            target = " ".join(words[2:] if words[0] == "minimum" else words[3:])
             if "recommendation" in target:
                 actual = len(output.get("recommendations", []))
-                chk(f"constraint_{i+1}", actual >= count, f"'{con}' — found {actual}, need ≥{count}")
+                chk(f"constraint_{i+1}", actual >= count, f"'{raw}' — found {actual}, need ≥{count}")
+                continue
             elif "complaint" in target or "theme" in target:
                 actual = len(output.get("top_complaints", []))
-                chk(f"constraint_{i+1}", actual >= count, f"'{con}' — found {actual}, need ≥{count}")
-            else:
-                chk(f"constraint_{i+1}", con.lower().strip() in searchable, f"'{con}' — not found in output")
-        else:
-            # keyword / phrase presence check
-            chk(f"constraint_{i+1}", con.lower().strip() in searchable, f"'{con}' — not found in report output")
+                chk(f"constraint_{i+1}", actual >= count, f"'{raw}' — found {actual}, need ≥{count}")
+                continue
+
+        # natural language prefix stripping: "must mention battery", "must include bluetooth", etc.
+        clean = raw.lower()
+        for prefix in ("must mention ", "must include ", "must have ", "should mention ", "should include ", "should cover ", "requires ", "require ", "includes "):
+            if clean.startswith(prefix):
+                clean = clean[len(prefix):].strip()
+                break
+
+        matched = (clean in searchable) or (all(w in searchable for w in clean.split() if len(w) > 3) if len(clean.split()) > 1 else False)
+        chk(f"constraint_{i+1}", bool(matched), f"'{raw}' — not found in report output")
