@@ -172,7 +172,7 @@ async def reset(x_admin_token: str = Header(None)):
     db.reset(); bootstrap(); return {"ok": True, "note": "providers re-register automatically within ~8s"}
 
 @app.get("/", response_class=HTMLResponse)
-def index(): return (Path(__file__).parent.parent / "dashboard" / "index.html").read_text()
+def index(): return (Path(__file__).parent.parent / "dashboard" / "index.html").read_text(encoding="utf-8")
 
 @app.get("/benchmark")
 def benchmark():

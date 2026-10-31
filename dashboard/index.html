@@ -19,7 +19,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 button.sm{width:auto;padding:3px 8px;margin:0;font-size:12px}
 .row{display:flex;gap:6px;align-items:center;justify-content:space-between;margin:5px 0;font-size:13px}
 #tape{background:var(--tape);color:var(--tapeink);border-radius:var(--r);height:620px;overflow:auto;padding:8px 0;font:12.5px/1.5 ui-monospace,"SF Mono",Consolas,monospace}
-.ev{display:grid;grid-template-columns:62px 118px 1fr;gap:8px;padding:2px 12px;border-left:3px solid transparent}
+.ev{display:grid;grid-template-columns:125px 125px 1fr;gap:8px;padding:2px 12px;border-left:3px solid transparent}
 .ev .t{opacity:.5}.ev .k{font-weight:700}.ev:hover{background:rgba(255,255,255,.04)}
 .k-money{border-color:#e0a646}.k-money .k{color:#e0a646}.k-good{border-color:#4fc3d1}.k-good .k{color:#4fc3d1}.k-bad{border-color:#ff7b72;background:rgba(255,123,114,.08)}.k-bad .k{color:#ff7b72}.k-info .k{color:#8aa9ff}
 table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;color:var(--mute);font-weight:600;padding:3px 4px}td{padding:4px;border-top:1px solid var(--line)}
@@ -54,25 +54,54 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;co
 <script>
 const $=id=>document.getElementById(id);let H={},A={"content-type":"application/json"};
 const inr=p=>(p/100).toFixed(2),short=s=>(s||"").replace("provider-","");
-function line(e){const p=e.payload,T=e.type;
- const m={TASK_CREATED:["info",`goal received, budget ₹${inr(p.budget)}, policy ${p.mode}`],PLAN:["info",`plan ${p.pipeline.join(" → ")}`],POLICY_DECISION:["info",`brain policy ${p.profile}: weights wR=${p.weights[0]}, wC=${p.weights[1]}, wT=${p.weights[2]} (${p.source})`],BOND_SLASHED:["bad",`slashed ₹${inr(p.slashed_paise)} from ${short(p.provider)} bond (remaining ₹${inr(p.remaining_bond)})`],
- STAGE_START:["info",`${p.capability} attempt ${p.attempt+1}, stage budget ₹${inr(p.stage_budget)}`],
- DISCOVERED:["info",`${p.providers.length} providers in registry: ${p.providers.map(x=>x.name+" (verified "+Math.round(x.verified_R*100)+"%)").join(", ")}`],
- BID:["info",`${p.name} bids ₹${inr(p.price)}, ${p.eta_ms} ms (claims ${Math.round(p.claimed_R*100)}%, verified ${Math.round(p.verified_R*100)}%)`],
- BID_REJECTED:["bad",`${short(p.provider)} rejected: ${p.reason}`],BID_DROPPED:["bad",`${short(p.provider)} dropped: ${p.reason}`],
- BID_SCORED:["info",`winner ${short(p.winner)} by ${p.rule}. `+p.ranking.map(r=>`${short(r.provider)} S=${r.score} (R ${r.R}, C ${r.C}, T ${r.T})`).join(" | ")],
- COUNTER:["info",`counter round ${p.round}: buyer ₹${inr(p.buyer_offer)} → ${p.accepted?"accepted":"provider says ₹"+inr(p.provider_price)}`],
- NEGOTIATED:["good",`negotiated ₹${inr(p.list_price)} → ₹${inr(p.agreed)} (saved ₹${inr(p.saved)})`],
- CONTRACT:["money",`contract ${p.contract_id} signed by both agents, ₹${inr(p.escrow_held)} held in escrow (fee ₹${inr(p.fee)})`],
- DELIVERY:["info",`${short(p.provider)} delivered in ${p.latency_ms} ms${p.error?", ERROR "+p.error:""}`],
- VERDICT:[p.passed?"good":"bad",`verifier: ${p.passed?"PASS":"FAIL"} ${p.passed?"":(Array.isArray(p.checks)?p.checks.map(c=>c.name+" ("+c.detail+")").join("; "):p.reason)}`],
- SETTLED:["good",`released ₹${inr(p.paid)} to ${short(p.provider)} after verification`],REFUNDED:["bad",`refund ₹${inr(p.amount)} to user, ${short(p.provider)} unpaid`],
- PAID_WITHOUT_VERIFICATION:["bad",`paid ₹${inr(p.amount)} with no check; ground truth ${p.ground_truth_passed?"fine":"BAD WORK"}`],
- NO_ELIGIBLE_BID:["bad",`no eligible bid for ${p.capability}`],BUDGET_REJECTED:["bad",`budget ₹${inr(p.budget)} below minimum ₹${inr(p.needed_minimum)}`],
- TASK_COMPLETED:["good",`task complete. spent ₹${inr(p.spent)}, paid for bad work ₹${inr(p.wasted_on_bad_work)}`],TASK_FAILED:["bad",`task failed: ${p.reason}. spent ₹${inr(p.spent)}, bad-work spend ₹${inr(p.wasted_on_bad_work)}`],
- AGENT_REGISTERED:["info",`agent ${p.agent_id} registered (key ${p.pubkey_prefix}…)`],FAILURE_INJECTED:["bad",`failure injected: ${short(p.provider)} → ${p.mode}`],
- LEDGER_TXN:["money",`ledger ${p.src} → ${p.dst} ₹${inr(p.amount)} (${p.memo})`]}[T]||["info",JSON.stringify(p).slice(0,140)];
- const d=document.createElement("div");d.className="ev k-"+m[0];d.innerHTML=`<span class="t">#${e.seq}</span><span class="k">${T}</span><span></span>`;d.lastChild.textContent=m[1];return d}
+function formatEvent(T, p) {
+ try {
+  switch (T) {
+   case "TASK_CREATED": return ["info", `goal received, budget ₹${inr(p.budget)}, policy ${p.mode}`];
+   case "PLAN": return ["info", `plan ${(p.pipeline||[]).join(" → ")}`];
+   case "POLICY_DECISION": return ["info", `brain policy ${p.profile}: weights wR=${p.weights?.[0]}, wC=${p.weights?.[1]}, wT=${p.weights?.[2]} (${p.source})`];
+   case "BOND_SLASHED": return ["bad", `slashed ₹${inr(p.slashed_paise)} from ${short(p.provider)} bond (remaining ₹${inr(p.remaining_bond)})`];
+   case "STAGE_START": return ["info", `${p.capability} attempt ${(p.attempt||0)+1}, stage budget ₹${inr(p.stage_budget)}`];
+   case "DISCOVERED": return ["info", `${(p.providers||[]).length} providers in registry: ${(p.providers||[]).map(x=>x.name+" (verified "+Math.round((x.verified_R||0)*100)+"%)").join(", ")}`];
+   case "BID": return ["info", `${p.name} bids ₹${inr(p.price)}, ${p.eta_ms} ms (claims ${Math.round((p.claimed_R||0)*100)}%, verified ${Math.round((p.verified_R||0)*100)}%)`];
+   case "BID_REJECTED": return ["bad", `${short(p.provider)} rejected: ${p.reason}`];
+   case "BID_DROPPED": return ["bad", `${short(p.provider)} dropped: ${p.reason}`];
+   case "BID_SCORED": return ["info", `winner ${short(p.winner)} by ${p.rule}. ` + (p.ranking||[]).map(r=>`${short(r.provider)} S=${r.score} (R ${r.R}, C ${r.C}, T ${r.T})`).join(" | ")];
+   case "COUNTER": return ["info", `counter round ${p.round}: buyer ₹${inr(p.buyer_offer)} → ${p.accepted?"accepted":"provider says ₹"+inr(p.provider_price)}`];
+   case "NEGOTIATED": return ["good", `negotiated ₹${inr(p.list_price)} → ₹${inr(p.agreed)} (saved ₹${inr(p.saved)})`];
+   case "CONTRACT": return ["money", `contract ${p.contract_id} signed by both agents, ₹${inr(p.escrow_held)} held in escrow (fee ₹${inr(p.fee)})`];
+   case "DELIVERY": return ["info", `${short(p.provider)} delivered in ${p.latency_ms} ms${p.error?", ERROR "+p.error:""}`];
+   case "VERDICT": {
+    const det = Array.isArray(p.checks) ? p.checks.map(c=>`${c.name} (${c.detail})`).join("; ") : (p.reason || "");
+    return [p.passed ? "good" : "bad", `verifier: ${p.passed ? "PASS" : "FAIL"} ${p.passed ? "" : det}`];
+   }
+   case "SETTLED": return ["good", `released ₹${inr(p.paid)} to ${short(p.provider)} after verification`];
+   case "REFUNDED": return ["bad", `refund ₹${inr(p.amount)} to user, ${short(p.provider)} unpaid`];
+   case "PAID_WITHOUT_VERIFICATION": return ["bad", `paid ₹${inr(p.amount)} with no check; ground truth ${p.ground_truth_passed?"fine":"BAD WORK"}`];
+   case "NO_ELIGIBLE_BID": return ["bad", `no eligible bid for ${p.capability}`];
+   case "NO_ELIGIBLE_BID_RETRYING": return ["bad", `no eligible bid for ${p.capability}, retrying with higher price cap`];
+   case "BUDGET_REJECTED": return ["bad", `budget ₹${inr(p.budget)} below minimum ₹${inr(p.needed_minimum)}`];
+   case "TASK_COMPLETED": return ["good", `task complete. spent ₹${inr(p.spent)}, paid for bad work ₹${inr(p.wasted_on_bad_work)}`];
+   case "TASK_FAILED": return ["bad", `task failed: ${p.reason}. spent ₹${inr(p.spent)}, bad-work spend ₹${inr(p.wasted_on_bad_work)}`];
+   case "AGENT_REGISTERED": return ["info", `agent ${p.agent_id} registered (key ${p.pubkey_prefix}…)`];
+   case "FAILURE_INJECTED": return ["bad", `failure injected: ${short(p.provider)} → ${p.mode}`];
+   case "LEDGER_TXN": return ["money", `ledger ${p.src} → ${p.dst} ₹${inr(p.amount)} (${p.memo})`];
+   default: return ["info", JSON.stringify(p).slice(0, 140)];
+  }
+ } catch(err) {
+  return ["info", JSON.stringify(p).slice(0, 140)];
+ }
+}
+function line(e){
+ const p=e.payload||{}, T=e.type;
+ const m=formatEvent(T, p);
+ const d=document.createElement("div");
+ d.className="ev k-"+m[0];
+ const h=(e.hash||"").slice(0,7);
+ d.innerHTML=`<span class="t" title="Record #${e.seq}&#10;SHA-256: ${e.hash}&#10;Prev: ${e.prev_hash}">#${e.seq} <small style="opacity:0.75;font-size:10px;background:rgba(255,255,255,0.08);padding:1px 3px;border-radius:3px">⛓️${h}</small></span><span class="k">${T}</span><span></span>`;
+ d.lastChild.textContent=m[1];
+ return d;
+}
 const tape=$("tape");let es;function connect(){es=new EventSource("/stream");es.onmessage=m=>{const near=tape.scrollTop+tape.clientHeight>tape.scrollHeight-60;tape.appendChild(line(JSON.parse(m.data)));if(near)tape.scrollTop=tape.scrollHeight}}connect();
 async function J(u,o){const r=await fetch(u,o);return r.json()}
 async function refresh(){
