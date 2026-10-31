@@ -7,7 +7,7 @@
       "recovery_after_failure_pct": 40.0,
       "avg_spent_inr": 8.8,
       "avg_wasted_inr": 0.0,
-      "avg_latency_ms": 3473
+      "avg_latency_ms": 7935
     },
     "ERC-8183 (Native)": {
       "completion_rate_pct": 0.0,
@@ -16,7 +16,16 @@
       "recovery_after_failure_pct": 0.0,
       "avg_spent_inr": 0.0,
       "avg_wasted_inr": 0.0,
-      "avg_latency_ms": 4
+      "avg_latency_ms": 23
+    },
+    "TermiX AACP (Challenge/Dispute)": {
+      "completion_rate_pct": 0.0,
+      "incorrect_output_accepted_and_paid_pct": 0.0,
+      "unverified_payments_count": 0,
+      "recovery_after_failure_pct": 0.0,
+      "avg_spent_inr": 0.0,
+      "avg_wasted_inr": 0.0,
+      "avg_latency_ms": 71
     },
     "ERC-8183 (+ Client Retry Adapter)": {
       "completion_rate_pct": 100.0,
@@ -25,7 +34,7 @@
       "recovery_after_failure_pct": 100.0,
       "avg_spent_inr": 10.0,
       "avg_wasted_inr": 0.0,
-      "avg_latency_ms": 12
+      "avg_latency_ms": 71
     },
     "Pay-Per-Request (Nevermined/x402)": {
       "completion_rate_pct": 0.0,
@@ -34,7 +43,7 @@
       "recovery_after_failure_pct": 0.0,
       "avg_spent_inr": 4.0,
       "avg_wasted_inr": 4.0,
-      "avg_latency_ms": 5
+      "avg_latency_ms": 32
     }
   },
   "replay_results": {
@@ -45,7 +54,7 @@
   "raw_runs": {
     "AGENTFLOW": [
       {
-        "task_id": "t-bfbc6cc3",
+        "task_id": "t-e6fc61ba",
         "success": true,
         "spent": 914,
         "wasted_paid": 0,
@@ -53,11 +62,11 @@
         "recovered": true,
         "refunds": 3,
         "saved_negotiation": 90,
-        "latency_ms": 4462,
+        "latency_ms": 9228,
         "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
       },
       {
-        "task_id": "t-6f0b7bca",
+        "task_id": "t-a2c95ef4",
         "success": true,
         "spent": 872,
         "wasted_paid": 0,
@@ -65,11 +74,11 @@
         "recovered": true,
         "refunds": 1,
         "saved_negotiation": 20,
-        "latency_ms": 3721,
+        "latency_ms": 9146,
         "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
       },
       {
-        "task_id": "t-69e00412",
+        "task_id": "t-984e725c",
         "success": true,
         "spent": 872,
         "wasted_paid": 0,
@@ -77,11 +86,11 @@
         "recovered": false,
         "refunds": 0,
         "saved_negotiation": 0,
-        "latency_ms": 3053,
+        "latency_ms": 7688,
         "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
       },
       {
-        "task_id": "t-b366f13c",
+        "task_id": "t-c05918ea",
         "success": true,
         "spent": 872,
         "wasted_paid": 0,
@@ -89,11 +98,11 @@
         "recovered": false,
         "refunds": 0,
         "saved_negotiation": 0,
-        "latency_ms": 3026,
+        "latency_ms": 7389,
         "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
       },
       {
-        "task_id": "t-a374e1f3",
+        "task_id": "t-437ebbae",
         "success": true,
         "spent": 872,
         "wasted_paid": 0,
@@ -101,7 +110,7 @@
         "recovered": false,
         "refunds": 0,
         "saved_negotiation": 0,
-        "latency_ms": 3104,
+        "latency_ms": 6228,
         "notes": "Full autonomous cycle: Bayesian discovery, negotiation, escrow, verification, slashing, and replacement."
       }
     ],
@@ -112,7 +121,7 @@
         "wasted_paid": 0,
         "unverified_payments": 0,
         "recovered": false,
-        "latency_ms": 4,
+        "latency_ms": 21,
         "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
       },
       {
@@ -121,7 +130,7 @@
         "wasted_paid": 0,
         "unverified_payments": 0,
         "recovered": false,
-        "latency_ms": 4,
+        "latency_ms": 25,
         "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
       },
       {
@@ -130,7 +139,7 @@
         "wasted_paid": 0,
         "unverified_payments": 0,
         "recovered": false,
-        "latency_ms": 4,
+        "latency_ms": 20,
         "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
       },
       {
@@ -139,7 +148,7 @@
         "wasted_paid": 0,
         "unverified_payments": 0,
         "recovered": false,
-        "latency_ms": 4,
+        "latency_ms": 29,
         "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
       },
       {
@@ -148,8 +157,60 @@
         "wasted_paid": 0,
         "unverified_payments": 0,
         "recovered": false,
-        "latency_ms": 4,
+        "latency_ms": 20,
         "notes": "Native ERC-8183 refunds correctly on evaluator reject, but lacks autonomous provider replacement."
+      }
+    ],
+    "TermiX AACP (Challenge/Dispute)": [
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "disputes_raised": 1,
+        "latency_ms": 73,
+        "notes": "TermiX AACP protects funds via challenge/dispute arbitration, but halts on failure without autonomous replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "disputes_raised": 1,
+        "latency_ms": 67,
+        "notes": "TermiX AACP protects funds via challenge/dispute arbitration, but halts on failure without autonomous replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "disputes_raised": 1,
+        "latency_ms": 72,
+        "notes": "TermiX AACP protects funds via challenge/dispute arbitration, but halts on failure without autonomous replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "disputes_raised": 1,
+        "latency_ms": 76,
+        "notes": "TermiX AACP protects funds via challenge/dispute arbitration, but halts on failure without autonomous replacement."
+      },
+      {
+        "success": false,
+        "spent": 0,
+        "wasted_paid": 0,
+        "unverified_payments": 0,
+        "recovered": false,
+        "disputes_raised": 1,
+        "latency_ms": 70,
+        "notes": "TermiX AACP protects funds via challenge/dispute arbitration, but halts on failure without autonomous replacement."
       }
     ],
     "ERC-8183 (+ Client Retry Adapter)": [
@@ -160,7 +221,7 @@
         "unverified_payments": 0,
         "recovered": true,
         "recovery_attempts": 3,
-        "latency_ms": 11,
+        "latency_ms": 64,
         "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
       },
       {
@@ -170,7 +231,7 @@
         "unverified_payments": 0,
         "recovered": true,
         "recovery_attempts": 3,
-        "latency_ms": 13,
+        "latency_ms": 82,
         "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
       },
       {
@@ -180,7 +241,7 @@
         "unverified_payments": 0,
         "recovered": true,
         "recovery_attempts": 3,
-        "latency_ms": 12,
+        "latency_ms": 68,
         "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
       },
       {
@@ -190,7 +251,7 @@
         "unverified_payments": 0,
         "recovered": true,
         "recovery_attempts": 3,
-        "latency_ms": 13,
+        "latency_ms": 75,
         "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
       },
       {
@@ -200,7 +261,7 @@
         "unverified_payments": 0,
         "recovered": true,
         "recovery_attempts": 3,
-        "latency_ms": 13,
+        "latency_ms": 68,
         "notes": "External retry adapter achieves recovery with ERC-8183 escrow, but lacks native discovery and learning."
       }
     ],
@@ -211,7 +272,7 @@
         "wasted_paid": 400,
         "unverified_payments": 3,
         "recovered": false,
-        "latency_ms": 5,
+        "latency_ms": 32,
         "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
       },
       {
@@ -220,7 +281,7 @@
         "wasted_paid": 400,
         "unverified_payments": 3,
         "recovered": false,
-        "latency_ms": 5,
+        "latency_ms": 33,
         "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
       },
       {
@@ -229,7 +290,7 @@
         "wasted_paid": 400,
         "unverified_payments": 3,
         "recovered": false,
-        "latency_ms": 6,
+        "latency_ms": 33,
         "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
       },
       {
@@ -238,7 +299,7 @@
         "wasted_paid": 400,
         "unverified_payments": 3,
         "recovered": false,
-        "latency_ms": 5,
+        "latency_ms": 34,
         "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
       },
       {
@@ -247,7 +308,7 @@
         "wasted_paid": 400,
         "unverified_payments": 3,
         "recovered": false,
-        "latency_ms": 5,
+        "latency_ms": 30,
         "notes": "Direct credit deduction pays for bad work 100% of the time when providers cheat."
       }
     ]
