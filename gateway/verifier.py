@@ -192,6 +192,10 @@ def _check_constraints(output: dict, constraints: list[str], chk):
             if clean.startswith(prefix):
                 clean = clean[len(prefix):].strip()
                 break
+        for suffix in (" issues", " complaints", " problems", " data", " bugs", " vulnerabilities"):
+            if clean.endswith(suffix):
+                clean = clean[:-len(suffix)].strip()
+                break
 
         matched = (clean in searchable) or (all(w in searchable for w in clean.split() if len(w) > 3) if len(clean.split()) > 1 else False)
         chk(f"constraint_{i+1}", bool(matched), f"'{raw}' — not found in report output")

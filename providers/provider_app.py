@@ -231,7 +231,8 @@ def do_audit_report(inp, mode):
         recommendations.append(f"Continue monitoring codebase for security issue #{len(recommendations)+1}")
     if mode in ("lazy_echo", "subtle_drift"):
         recommendations = [recommendations[0]] * len(recommendations)
-    summary = f"Audited {total_files} files: found {total_bugs} security issues across {files_with_bugs} files. {clean_files} files are clean. Risk score: {risk_score}/100."
+    cats_summary = ", ".join(sorted(by_category.keys()))
+    summary = f"Audited {total_files} files: found {total_bugs} security issues across {files_with_bugs} files. {clean_files} files are clean. Risk score: {risk_score}/100. Issues detected: {cats_summary}."
     return {"summary": summary, "total_files": total_files, "total_bugs": total_bugs,
             "files_with_bugs": files_with_bugs, "clean_files": clean_files, "risk_score": risk_score,
             "severity_breakdown": dict(by_severity), "top_issues": [{"category": c, "count": k} for c, k in top_issues],
